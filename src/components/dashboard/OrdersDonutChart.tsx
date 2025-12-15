@@ -1,9 +1,9 @@
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 
 const data = [
-  { name: "Open", value: 4045, color: "hsl(var(--chart-blue))" },
-  { name: "Pending", value: 3245, color: "hsl(var(--chart-green))" },
-  { name: "Accepted", value: 1252, color: "hsl(var(--chart-yellow))" },
+  { name: "Open", value: 4045, color: "hsl(217 91% 60%)" },
+  { name: "Pending", value: 3245, color: "hsl(142 71% 45%)" },
+  { name: "Accepted", value: 1252, color: "hsl(38 92% 50%)" },
 ];
 
 export const OrdersDonutChart = () => {
