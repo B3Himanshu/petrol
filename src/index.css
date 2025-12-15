@@ -86,12 +86,39 @@
     --accent: 43 96% 56%;
     --accent-foreground: 222 47% 11%;
 
-    --destructive: 0 63% 31%;
+    --destructive: 0 62% 48%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
+    --border: 217 33% 20%;
+    --input: 217 33% 20%;
     --ring: 43 96% 56%;
+
+    /* Dashboard specific - Dark mode */
+    --sidebar-bg: 223 47% 16%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-muted: 215 20% 65%;
+    --sidebar-accent: 43 96% 56%;
+    
+    /* Chart colors - Enhanced for dark mode */
+    --chart-blue: 217 91% 65%;
+    --chart-green: 142 71% 50%;
+    --chart-yellow: 43 96% 58%;
+    --chart-orange: 25 95% 58%;
+    --chart-purple: 262 83% 63%;
+    
+    /* Metric card accents - Enhanced for dark mode */
+    --metric-blue: 217 91% 65%;
+    --metric-green: 142 71% 50%;
+    --metric-yellow: 43 96% 58%;
+    --metric-orange: 25 95% 58%;
+    --metric-purple: 262 83% 63%;
+    --metric-pink: 330 81% 65%;
+
+    /* Shadows - Enhanced for dark mode */
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.3);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.4), 0 2px 4px -2px hsl(0 0% 0% / 0.3);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.4), 0 4px 6px -4px hsl(0 0% 0% / 0.3);
+    --shadow-card: 0 1px 3px 0 hsl(0 0% 0% / 0.2), 0 1px 2px -1px hsl(0 0% 0% / 0.2);
   }
 }
 
@@ -116,11 +143,11 @@
   }
   
   .metric-card {
-    @apply bg-card rounded-xl p-5 shadow-card border border-border/50 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5;
+    @apply bg-card rounded-xl p-4 lg:p-5 shadow-card border border-border/50 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5;
   }
   
   .chart-card {
-    @apply bg-card rounded-xl p-6 shadow-card border border-border/50;
+    @apply bg-card rounded-xl p-4 lg:p-6 shadow-card border border-border/50;
   }
   
   .filter-button {

@@ -49,11 +49,32 @@ const SubNavItem = ({ label, active }: { label: string; active?: boolean }) => (
   </button>
 );
 
-export const Sidebar = () => {
+interface SidebarProps {
+  isOpen: boolean;
+  onToggle: () => void;
+}
+
+export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
   const [ordersExpanded, setOrdersExpanded] = useState(true);
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-sidebar-bg flex flex-col z-50">
+    <>
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={onToggle}
+        />
+      )}
+      
+      <aside 
+        style={{ willChange: 'transform' }}
+        className={cn(
+          "fixed left-0 top-0 h-screen w-64 bg-sidebar-bg flex flex-col z-50",
+          "transform-gpu overflow-hidden transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
+          isOpen ? "translate-x-0" : "-translate-x-full pointer-events-none"
+        )}
+      >
       {/* Logo */}
       <div className="p-6 flex items-center gap-3">
         <div className="w-10 h-10 bg-sidebar-accent rounded-xl flex items-center justify-center">
@@ -131,5 +152,6 @@ export const Sidebar = () => {
         />
       </div>
     </aside>
+    </>
   );
 };

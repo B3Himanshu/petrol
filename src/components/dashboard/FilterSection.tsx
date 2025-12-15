@@ -10,19 +10,19 @@ import {
 
 export const FilterSection = () => {
   return (
-    <div className="chart-card mb-6 animate-slide-up">
-      <div className="flex items-center justify-between mb-4">
+    <div className="chart-card mb-4 lg:mb-6 animate-slide-up">
+      <div className="flex items-center justify-between mb-3 lg:mb-4">
         <div className="flex items-center gap-2">
           <Filter className="w-4 h-4 text-primary" />
-          <span className="font-semibold text-foreground">Filters</span>
+          <span className="text-sm lg:text-base font-semibold text-foreground">Filters</span>
         </div>
-        <button className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+        <button className="text-xs lg:text-sm text-muted-foreground hover:text-foreground transition-colors">
           Reset
         </button>
       </div>
 
-      <div className="flex flex-wrap items-end gap-4">
-        <div className="flex-1 min-w-[150px]">
+      <div className="flex flex-wrap items-end gap-3 lg:gap-4">
+        <div className="flex-1 min-w-[120px] sm:min-w-[150px]">
           <label className="text-xs font-medium text-primary mb-2 block">Month</label>
           <Select defaultValue="december">
             <SelectTrigger className="bg-background border-border">
@@ -45,7 +45,7 @@ export const FilterSection = () => {
           </Select>
         </div>
 
-        <div className="flex-1 min-w-[150px]">
+        <div className="flex-1 min-w-[120px] sm:min-w-[150px]">
           <label className="text-xs font-medium text-primary mb-2 block">Year</label>
           <Select defaultValue="2024">
             <SelectTrigger className="bg-background border-border">
@@ -59,7 +59,7 @@ export const FilterSection = () => {
           </Select>
         </div>
 
-        <div className="flex-1 min-w-[150px]">
+        <div className="flex-1 min-w-[120px] sm:min-w-[150px]">
           <label className="text-xs font-medium text-muted-foreground mb-2 block">Site</label>
           <Select defaultValue="all">
             <SelectTrigger className="bg-background border-border">
@@ -74,7 +74,7 @@ export const FilterSection = () => {
           </Select>
         </div>
 
-        <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-6">
+        <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-4 lg:px-6 w-full sm:w-auto">
           Apply Filters
         </Button>
       </div>
