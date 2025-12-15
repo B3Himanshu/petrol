@@ -1,10 +1,24 @@
-import { Users, ShoppingCart, TrendingUp, Package, DollarSign, BarChart } from "lucide-react";
+import { 
+  Fuel, 
+  IndianRupee, 
+  TrendingUp, 
+  BarChart, 
+  Percent, 
+  ShoppingCart, 
+  ShoppingBag, 
+  Users 
+} from "lucide-react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { Header } from "@/components/dashboard/Header";
 import { MetricCard } from "@/components/dashboard/MetricCard";
-import { SalesSummaryChart } from "@/components/dashboard/SalesSummaryChart";
-import { ProductSummaryChart } from "@/components/dashboard/ProductSummaryChart";
+import { FilterSection } from "@/components/dashboard/FilterSection";
+import { QuickInsights } from "@/components/dashboard/QuickInsights";
+import { MonthlyPerformanceChart } from "@/components/dashboard/MonthlyPerformanceChart";
 import { OrdersDonutChart } from "@/components/dashboard/OrdersDonutChart";
+import { BunkeredSalesChart } from "@/components/dashboard/BunkeredSalesChart";
+import { PPIChart } from "@/components/dashboard/PPIChart";
+import { DateWiseChart } from "@/components/dashboard/DateWiseChart";
+import { StatusCard } from "@/components/dashboard/StatusCard";
 
 const Index = () => {
   return (
@@ -17,95 +31,125 @@ const Index = () => {
         <div className="p-6">
           {/* Page Title */}
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+            <h1 className="text-2xl font-bold text-foreground">Business Performance Dashboard</h1>
           </div>
 
-          {/* Metrics Grid */}
+          {/* Filter Section */}
+          <FilterSection />
+
+          {/* Primary Metrics Grid - Row 1 */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
             <MetricCard
-              title="Total Users"
-              value="7,320"
-              icon={Users}
+              title="Total Fuel Volume"
+              value="1.56 M L"
+              subtitle="Litres Sold"
+              icon={Fuel}
               iconBg="blue"
-              sparkline={[30, 45, 35, 50, 40, 60, 55]}
               delay={0}
             />
             <MetricCard
-              title="Total Orders"
-              value="19,320"
-              icon={ShoppingCart}
-              iconBg="purple"
-              sparkline={[40, 30, 55, 45, 60, 50, 70]}
-              delay={50}
-            />
-            <MetricCard
-              title="Total Sales"
-              value="₹20,320"
+              title="Net Sales (Rupees)"
+              value="₹2 M"
               subtitle="Revenue generated"
               change="+12.5% vs last month"
               changeType="positive"
-              icon={TrendingUp}
+              icon={IndianRupee}
               iconBg="green"
+              delay={50}
+            />
+            <MetricCard
+              title="Profit (rupees)"
+              value="₹5.5 Cr"
+              subtitle="Net Earnings"
+              icon={TrendingUp}
+              iconBg="purple"
               delay={100}
             />
             <MetricCard
-              title="Total Pending"
-              value="7,320"
-              icon={Package}
+              title="Avg PPI"
+              value="84.0 /-"
+              subtitle="Per litre for this year"
+              icon={BarChart}
               iconBg="orange"
-              sparkline={[25, 35, 30, 45, 35, 55, 45]}
               delay={150}
             />
           </div>
 
-          {/* Charts Row */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <SalesSummaryChart />
-            <div className="grid grid-cols-2 gap-5">
-              <MetricCard
-                title="Basket Size"
-                value="₹425"
-                subtitle="Average order value"
-                icon={DollarSign}
-                iconBg="yellow"
-                delay={200}
-              />
-              <MetricCard
-                title="Customer Count"
-                value="12,450"
-                subtitle="This month"
-                change="+8.3% vs last month"
-                changeType="positive"
-                icon={Users}
-                iconBg="pink"
-                delay={250}
-              />
-              <MetricCard
-                title="Avg PPI"
-                value="84.0/-"
-                subtitle="Per litre for this year"
-                icon={BarChart}
-                iconBg="purple"
-                delay={300}
-              />
-              <MetricCard
-                title="Profit"
-                value="₹5.5 Cr"
-                subtitle="Net earnings"
-                change="+15.2% vs last month"
-                changeType="positive"
-                icon={TrendingUp}
-                iconBg="green"
-                delay={350}
-              />
-            </div>
+          {/* Secondary Metrics Grid - Row 2 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+            <MetricCard
+              title="Actual PO"
+              value="₹78.5"
+              subtitle="Average"
+              icon={Percent}
+              iconBg="yellow"
+              delay={200}
+            />
+            <MetricCard
+              title="Unique Cost Customers"
+              value="16"
+              subtitle="per shop sales"
+              icon={ShoppingCart}
+              iconBg="pink"
+              delay={250}
+            />
+            <MetricCard
+              title="Basket Size"
+              value="₹425"
+              subtitle="Average order value"
+              icon={ShoppingBag}
+              iconBg="yellow"
+              delay={300}
+            />
+            <MetricCard
+              title="Customer Count"
+              value="12,450"
+              subtitle="This month"
+              icon={Users}
+              iconBg="purple"
+              delay={350}
+            />
           </div>
 
-          {/* Bottom Charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <ProductSummaryChart />
+          {/* Status Cards Row */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+            <StatusCard 
+              title="Bank Closing Balance" 
+              value="₹24,50,000" 
+              delay={400}
+            />
+            <StatusCard 
+              title="Fuel Condition" 
+              value="Normal" 
+              status="normal"
+              delay={450}
+            />
+            <StatusCard 
+              title="Discounts (Total /)" 
+              value="₹45,000" 
+              delay={500}
+            />
+          </div>
+
+          {/* Quick Insights */}
+          <QuickInsights />
+
+          {/* Charts Row 1 */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <div className="lg:col-span-2">
+              <MonthlyPerformanceChart />
+            </div>
             <OrdersDonutChart />
           </div>
+
+          {/* Charts Row 2 */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <BunkeredSalesChart />
+            <PPIChart />
+          </div>
+
+          {/* Date-wise Chart */}
+          <DateWiseChart />
         </div>
       </main>
     </div>
