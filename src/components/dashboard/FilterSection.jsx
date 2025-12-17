@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/select";
 
 // Clean JSX FilterSection (no TypeScript, no BOM)
-export const FilterSection = () => {
+export const FilterSection = ({ onApplyFilters, selectedCity, onCityChange }) => {
   return (
     <div className="chart-card mb-4 lg:mb-6 animate-slide-up">
       <div className="flex items-center justify-between mb-3 lg:mb-4">
@@ -86,7 +86,33 @@ export const FilterSection = () => {
           </Select>
         </div>
 
-        <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-4 lg:px-6 w-full sm:w-auto">
+        {/* City */}
+        <div className="flex-1 min-w-[120px] sm:min-w-[150px]">
+          <label className="text-xs font-medium text-primary mb-2 block">
+            City
+          </label>
+          <Select value={selectedCity || "london"} onValueChange={onCityChange}>
+            <SelectTrigger className="bg-background border-border">
+              <SelectValue placeholder="Select city" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="london">London</SelectItem>
+              <SelectItem value="manchester">Manchester</SelectItem>
+              <SelectItem value="birmingham">Birmingham</SelectItem>
+              <SelectItem value="glasgow">Glasgow</SelectItem>
+              <SelectItem value="liverpool">Liverpool</SelectItem>
+              <SelectItem value="leeds">Leeds</SelectItem>
+              <SelectItem value="edinburgh">Edinburgh</SelectItem>
+              <SelectItem value="bristol">Bristol</SelectItem>
+              <SelectItem value="cardiff">Cardiff</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <Button 
+          onClick={onApplyFilters}
+          className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-4 lg:px-6 w-full sm:w-auto"
+        >
           Apply Filters
         </Button>
       </div>

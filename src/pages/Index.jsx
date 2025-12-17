@@ -15,11 +15,16 @@ import { MetricCard } from "@/components/dashboard/MetricCard";
 import { FilterSection } from "@/components/dashboard/FilterSection";
 import { QuickInsights } from "@/components/dashboard/QuickInsights";
 import { MonthlyPerformanceChart } from "@/components/dashboard/MonthlyPerformanceChart";
-import { OrdersDonutChart } from "@/components/dashboard/OrdersDonutChart";
+import { OverallSalesPieChart } from "@/components/dashboard/OverallSalesPieChart";
 import { BunkeredSalesChart } from "@/components/dashboard/BunkeredSalesChart";
 import { PPIChart } from "@/components/dashboard/PPIChart";
 import { DateWiseChart } from "@/components/dashboard/DateWiseChart";
 import { StatusCard } from "@/components/dashboard/StatusCard";
+import { InitialLandingState } from "@/components/dashboard/InitialLandingState";
+import { CardDetailModal, DetailItem } from "@/components/dashboard/CardDetailModal";
+import { TopPerformingSitesTable } from "@/components/dashboard/TopPerformingSitesTable";
+import { MarketingInitiativesTable } from "@/components/dashboard/MarketingInitiativesTable";
+import { SalesDistributionChart } from "@/components/dashboard/SalesDistributionChart";
 
 const Index = () => {
   // Initialize sidebar state based on screen size
@@ -29,6 +34,18 @@ const Index = () => {
     }
     return true;
   });
+
+  // Filter and landing state
+  const [filtersApplied, setFiltersApplied] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState(null);
+  const [selectedYear, setSelectedYear] = useState(null);
+  const [selectedSite, setSelectedSite] = useState(null);
+  const [selectedCity, setSelectedCity] = useState('london');
+
+  // Modal states for card clicks
+  const [fuelVolumeModalOpen, setFuelVolumeModalOpen] = useState(false);
+  const [netSalesModalOpen, setNetSalesModalOpen] = useState(false);
+  const [profitModalOpen, setProfitModalOpen] = useState(false);
 
   // Handle responsive sidebar on resize
   useEffect(() => {
@@ -45,6 +62,10 @@ const Index = () => {
   }, []);
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
+  
+  const handleApplyFilters = () => {
+    setFiltersApplied(true);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -63,23 +84,40 @@ const Index = () => {
           </div>
 
           {/* Filter Section */}
-          <FilterSection />
+          <FilterSection 
+            onApplyFilters={handleApplyFilters}
+            selectedCity={selectedCity}
+            onCityChange={setSelectedCity}
+          />
+
+          {/* Initial Landing State - Show when filters not applied */}
+          {!filtersApplied && (
+            <InitialLandingState 
+              onApplyFilters={handleApplyFilters}
+              selectedCity={selectedCity}
+            />
+          )}
+
+          {/* Main Dashboard - Show when filters applied */}
+          {filtersApplied && (
+            <>
 
           {/* Primary Metrics Grid - Row 1 */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5 mb-4 lg:mb-6">
             <MetricCard
               title="Total Fuel Volume"
-              value="1.56 M L"
+              value="130 M L"
               subtitle="Litres Sold"
               icon={Fuel}
               iconBg="blue"
               delay={0}
               chartType="bar"
               chartData={[30, 45, 35, 60, 50, 70, 65, 80]}
+              onClick={() => setFuelVolumeModalOpen(true)}
             />
             <MetricCard
-              title="Net Sales (Rupees)"
-              value="₹2 M"
+              title="Net Sales (Pounds)"
+              value="£2 M"
               subtitle="Revenue generated"
               change="+12.5% vs last month"
               changeType="positive"
@@ -88,21 +126,23 @@ const Index = () => {
               delay={50}
               chartType="line"
               chartData={[20, 30, 25, 40, 35, 50, 55, 70]}
+              onClick={() => setNetSalesModalOpen(true)}
             />
             <MetricCard
-              title="Profit (rupees)"
-              value="₹5.5 Cr"
-              subtitle="Net Earnings"
+              title="Profit (pounds)"
+              value="£86.5 k"
+              subtitle="Total Earnings"
               icon={TrendingUp}
               iconBg="purple"
               delay={100}
               chartType="line"
               chartData={[15, 25, 30, 35, 40, 50, 60, 75]}
+              onClick={() => setProfitModalOpen(true)}
             />
             <MetricCard
-              title="Avg PPI"
-              value="84.0 /-"
-              subtitle="Per litre for this year"
+              title="Avg PPL"
+              value="6.02 p"
+              subtitle="Profit Per liter"
               icon={BarChart}
               iconBg="orange"
               delay={150}
@@ -114,8 +154,8 @@ const Index = () => {
           {/* Secondary Metrics Grid - Row 2 */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5 mb-4 lg:mb-6">
             <MetricCard
-              title="Actual PO"
-              value="₹78.5"
+              title="Actual PPL"
+              value="£78.5"         
               subtitle="Average"
               icon={Percent}
               iconBg="yellow"
@@ -124,8 +164,8 @@ const Index = () => {
               chartData={[45, 50, 40, 55, 48, 60, 52, 58]}
             />
             <MetricCard
-              title="Unique Cost Customers"
-              value="16"
+              title="Labour cost as % per shop sales"
+              value="16%"
               subtitle="per shop sales"
               icon={ShoppingCart}
               iconBg="pink"
@@ -159,18 +199,28 @@ const Index = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 lg:gap-5 mb-4 lg:mb-6">
             <StatusCard 
               title="Bank Closing Balance" 
-              value="₹24,50,000" 
+              value="£24,50,000" 
               delay={400}
+            />
+            <StatusCard 
+              title="Debtors (Total)" 
+              value="£1,20,000" 
+              delay={425}
+            />
+            <StatusCard 
+              title="Fuel Creditors" 
+              value="£85,000" 
+              delay={450}
             />
             <StatusCard 
               title="Fuel Condition" 
               value="Normal" 
               status="normal"
-              delay={450}
+              delay={475}
             />
             <StatusCard 
               title="Discounts (Total /)" 
-              value="₹45,000" 
+              value="£45,000" 
               delay={500}
             />
           </div>
@@ -183,7 +233,7 @@ const Index = () => {
             <div className="lg:col-span-2">
               <MonthlyPerformanceChart />
             </div>
-            <OrdersDonutChart />
+            <OverallSalesPieChart />
           </div>
 
           {/* Charts Row 2 */}
@@ -193,7 +243,83 @@ const Index = () => {
           </div>
 
           {/* Date-wise Chart */}
-          <DateWiseChart />
+          <DateWiseChart 
+            selectedMonths={selectedMonth ? [selectedMonth] : []}
+          />
+
+          {/* Tables Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mb-4 lg:mb-6">
+            <TopPerformingSitesTable />
+            <MarketingInitiativesTable />
+          </div>
+
+          {/* Sales Distribution Chart */}
+          <SalesDistributionChart />
+            </>
+          )}
+
+          {/* Card Detail Modals */}
+          <CardDetailModal
+            open={fuelVolumeModalOpen}
+            onOpenChange={setFuelVolumeModalOpen}
+            title="Total Fuel Volume Breakdown"
+          >
+            <DetailItem 
+              label="Total Bunkered volume" 
+              value="1 M Liters" 
+            />
+            <DetailItem 
+              label="Total Non-Bunkered Volume" 
+              value="30k Liters" 
+            />
+          </CardDetailModal>
+
+          <CardDetailModal
+            open={netSalesModalOpen}
+            onOpenChange={setNetSalesModalOpen}
+            title="Net Sales Breakdown"
+          >
+            <DetailItem 
+              label="Fuel Sales" 
+              value="£143 M" 
+              subValue="(Bunkered sales: 1M, Non-Bunkered sales: 43 K)"
+            />
+            <DetailItem 
+              label="Shop Sales" 
+              value="£40k" 
+            />
+            <DetailItem 
+              label="Valet Sales" 
+              value="£17k" 
+            />
+          </CardDetailModal>
+
+          <CardDetailModal
+            open={profitModalOpen}
+            onOpenChange={setProfitModalOpen}
+            title="Profit Breakdown"
+          >
+            <DetailItem 
+              label="Fuel Profit" 
+              value="£88.5k" 
+            />
+            <DetailItem 
+              label="Bunkered Profit" 
+              value="£7.7k" 
+            />
+            <DetailItem 
+              label="Non-Bunkered Profit" 
+              value="£9.5k" 
+            />
+            <DetailItem 
+              label="Shop Profit" 
+              value="£9k" 
+            />
+            <DetailItem 
+              label="Valet Profit" 
+              value="£4.5k" 
+            />
+          </CardDetailModal>
         </div>
       </main>
     </div>

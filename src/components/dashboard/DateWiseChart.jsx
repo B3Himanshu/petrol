@@ -29,24 +29,39 @@ const data = [
   { day: 31, sales: 4457 },
 ];
 
-export const DateWiseChart = () => {
+export const DateWiseChart = ({ selectedMonths = [] }) => {
+  // Show month filter only if multiple months are selected
+  const showMonthFilter = selectedMonths.length > 1;
+  // Default to last month if multiple selected
+  const defaultMonth = showMonthFilter ? selectedMonths[selectedMonths.length - 1] : null;
+  
+  // Filter data to show only up to current date if viewing current month
+  const today = new Date();
+  const currentDay = today.getDate();
+  const filteredData = data.filter((item) => item.day < currentDay);
+
   return (
     <div className="chart-card h-[380px] animate-slide-up" style={{ animationDelay: "450ms" }}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-foreground">Date-Wise Data (Line chart)</h3>
-        <Select defaultValue="december">
-          <SelectTrigger className="w-32 bg-background border-border">
-            <SelectValue placeholder="Month" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="november">November</SelectItem>
-            <SelectItem value="december">December</SelectItem>
-          </SelectContent>
-        </Select>
+        {showMonthFilter && (
+          <Select defaultValue={defaultMonth || "december"}>
+            <SelectTrigger className="w-32 bg-background border-border">
+              <SelectValue placeholder="Month" />
+            </SelectTrigger>
+            <SelectContent>
+              {selectedMonths.map((month) => (
+                <SelectItem key={month} value={month}>
+                  {month.charAt(0).toUpperCase() + month.slice(1)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       <ResponsiveContainer width="100%" height="85%">
-        <AreaChart data={data}>
+        <AreaChart data={filteredData.length > 0 ? filteredData : data}>
           <defs>
             <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="hsl(var(--chart-blue))" stopOpacity={0.3} />

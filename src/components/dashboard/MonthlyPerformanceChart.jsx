@@ -13,6 +13,12 @@ import {
 } from "recharts";
 import { Filter } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 
 const data = [
   { month: "Jan", fuel: 4200, shop: 1800, valet: 1600 },
@@ -32,16 +38,82 @@ const data = [
 export const MonthlyPerformanceChart = () => {
   // JSX version: no TypeScript generic on useState
   const [viewType, setViewType] = useState("bar");
+  const [filterType, setFilterType] = useState(null); // null = all, "fuel", "shop", "valet"
+  const [filterOpen, setFilterOpen] = useState(false);
 
   return (
     <div className="chart-card h-[420px] animate-slide-up" style={{ animationDelay: "200ms" }}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-foreground">Monthly Performance Trends</h3>
         <div className="flex items-center gap-2">
-          <button className="flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground border border-border rounded-lg transition-colors">
-            <Filter className="w-4 h-4" />
-            View
-          </button>
+          <Popover open={filterOpen} onOpenChange={setFilterOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <Filter className="w-4 h-4" />
+                Filter
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-40 p-2">
+              <div className="space-y-1">
+                <button
+                  onClick={() => {
+                    setFilterType(null);
+                    setFilterOpen(false);
+                  }}
+                  className={cn(
+                    "w-full text-left px-3 py-2 rounded-md text-sm transition-colors",
+                    filterType === null
+                      ? "bg-primary text-primary-foreground"
+                      : "hover:bg-muted"
+                  )}
+                >
+                  All
+                </button>
+                <button
+                  onClick={() => {
+                    setFilterType("fuel");
+                    setFilterOpen(false);
+                  }}
+                  className={cn(
+                    "w-full text-left px-3 py-2 rounded-md text-sm transition-colors",
+                    filterType === "fuel"
+                      ? "bg-primary text-primary-foreground"
+                      : "hover:bg-muted"
+                  )}
+                >
+                  Fuel
+                </button>
+                <button
+                  onClick={() => {
+                    setFilterType("shop");
+                    setFilterOpen(false);
+                  }}
+                  className={cn(
+                    "w-full text-left px-3 py-2 rounded-md text-sm transition-colors",
+                    filterType === "shop"
+                      ? "bg-primary text-primary-foreground"
+                      : "hover:bg-muted"
+                  )}
+                >
+                  Shop
+                </button>
+                <button
+                  onClick={() => {
+                    setFilterType("valet");
+                    setFilterOpen(false);
+                  }}
+                  className={cn(
+                    "w-full text-left px-3 py-2 rounded-md text-sm transition-colors",
+                    filterType === "valet"
+                      ? "bg-primary text-primary-foreground"
+                      : "hover:bg-muted"
+                  )}
+                >
+                  Valet
+                </button>
+              </div>
+            </PopoverContent>
+          </Popover>
           <div className="flex rounded-lg border border-border overflow-hidden">
             <button
               onClick={() => setViewType("bar")}
@@ -90,6 +162,18 @@ export const MonthlyPerformanceChart = () => {
                 border: "1px solid hsl(var(--border))",
                 borderRadius: "8px",
                 boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+              }}
+              formatter={(value, name) => {
+                // Show breakdown for fuel sales and fuel volume
+                if (name === "fuel") {
+                  const bunkered = Math.round(value * 0.6);
+                  const nonBunkered = Math.round(value * 0.4);
+                  return [
+                    `Total: £${value.toLocaleString()}\nBunkered: £${bunkered.toLocaleString()}\nNon-Bunkered: £${nonBunkered.toLocaleString()}`,
+                    "Fuel Sales"
+                  ];
+                }
+                return [`£${value.toLocaleString()}`, name];
               }}
             />
             <Legend 

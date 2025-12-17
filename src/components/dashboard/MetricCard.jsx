@@ -31,7 +31,8 @@ export const MetricCard = ({
   sparkline,
   delay = 0,
   chartType = "none",
-  chartData = []
+  chartData = [],
+  onClick
 }) => {
   // Transform chartData for recharts
   const formattedChartData = chartData.map((value, index) => ({
@@ -41,8 +42,12 @@ export const MetricCard = ({
 
   return (
     <div 
-      className="relative bg-card rounded-2xl p-5 border border-border shadow-sm hover:shadow-md transition-all duration-300 animate-slide-up overflow-hidden group"
+      className={cn(
+        "relative bg-card rounded-2xl p-5 border border-border shadow-sm hover:shadow-md transition-all duration-300 animate-slide-up overflow-hidden group",
+        onClick && "cursor-pointer"
+      )}
       style={{ animationDelay: `${delay}ms` }}
+      onClick={onClick}
     >
       {/* Header with Icon and Title */}
       <div className="flex items-start justify-between mb-3">

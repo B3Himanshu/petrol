@@ -47,6 +47,14 @@ export const BunkeredSalesChart = () => {
               borderRadius: "8px",
               boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
             }}
+            formatter={(value, name) => {
+              if (name === "bunkered") {
+                return [`Bunkered: £${value.toLocaleString()}`, "Bunkered Sales"];
+              } else if (name === "nonBunkered") {
+                return [`Non-Bunkered: £${value.toLocaleString()}`, "Non-Bunkered Sales"];
+              }
+              return [`£${value.toLocaleString()}`, name];
+            }}
           />
           <Legend 
             wrapperStyle={{ paddingTop: "10px" }}
