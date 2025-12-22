@@ -59,12 +59,13 @@ export const Sidebar = ({ isOpen, onToggle }) => {
         style={{ willChange: "transform" }}
         className={cn(
           "fixed left-0 top-0 h-screen w-64 bg-sidebar-bg flex flex-col z-50",
-          "transform-gpu overflow-hidden transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
+          "transform-gpu transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
+          "overflow-hidden",
           isOpen ? "translate-x-0" : "-translate-x-full pointer-events-none",
         )}
       >
-        {/* Logo */}
-        <div className="p-6 flex items-center gap-3">
+        {/* Logo - Fixed at top */}
+        <div className="flex-shrink-0 p-6 flex items-center gap-3">
           <div className="w-10 h-10 bg-sidebar-accent rounded-xl flex items-center justify-center">
             <Fuel className="w-6 h-6 text-sidebar-bg" />
           </div>
@@ -73,8 +74,8 @@ export const Sidebar = ({ isOpen, onToggle }) => {
           </span>
         </div>
 
-        {/* Main Navigation */}
-        <nav className="flex-1 px-4 py-2 space-y-1">
+        {/* Main Navigation - No scrolling, content fits naturally */}
+        <nav className="flex-1 px-4 py-2 space-y-1 overflow-hidden">
           <p className="px-4 py-2 text-xs font-semibold text-sidebar-muted uppercase tracking-wider">
             Main Menu
           </p>
@@ -119,8 +120,8 @@ export const Sidebar = ({ isOpen, onToggle }) => {
           />
         </nav>
 
-        {/* Preference Section */}
-        <div className="px-4 py-4 border-t border-sidebar-muted/20">
+        {/* Preference Section - Fixed at bottom */}
+        <div className="flex-shrink-0 px-4 py-4 border-t border-sidebar-muted/20">
           <p className="px-4 py-2 text-xs font-semibold text-sidebar-muted uppercase tracking-wider">
             Preference
           </p>
@@ -131,8 +132,8 @@ export const Sidebar = ({ isOpen, onToggle }) => {
           <NavItem icon={<HelpCircle className="w-5 h-5" />} label="Help" />
         </div>
 
-        {/* Logout */}
-        <div className="p-4 border-t border-sidebar-muted/20">
+        {/* Logout - Fixed at bottom */}
+        <div className="flex-shrink-0 p-4 border-t border-sidebar-muted/20">
           <NavItem icon={<LogOut className="w-5 h-5" />} label="Log Out" />
         </div>
       </aside>

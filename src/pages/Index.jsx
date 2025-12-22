@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { 
   Fuel, 
   IndianRupee, 
@@ -25,8 +25,16 @@ import { CardDetailModal, DetailItem } from "@/components/dashboard/CardDetailMo
 import { TopPerformingSitesTable } from "@/components/dashboard/TopPerformingSitesTable";
 import { MarketingInitiativesTable } from "@/components/dashboard/MarketingInitiativesTable";
 import { SalesDistributionChart } from "@/components/dashboard/SalesDistributionChart";
+import { SplineLoader } from "@/components/dashboard/SplineLoader";
+import { CityMap } from "@/components/dashboard/CityMap";
 
 const Index = () => {
+  // Loading state for Spline animation - starts true on page load
+  const [isLoading, setIsLoading] = useState(true);
+  const [dashboardVisible, setDashboardVisible] = useState(false);
+  // Track if loading has already completed to prevent re-triggering
+  const loadingCompletedRef = useRef(false);
+
   // Initialize sidebar state based on screen size
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -40,7 +48,8 @@ const Index = () => {
   const [selectedMonth, setSelectedMonth] = useState(null);
   const [selectedYear, setSelectedYear] = useState(null);
   const [selectedSite, setSelectedSite] = useState(null);
-  const [selectedCity, setSelectedCity] = useState('london');
+  // Default to "all" so the dashboard always starts on the full UK map
+  const [selectedCity, setSelectedCity] = useState('all');
 
   // Modal states for card clicks
   const [fuelVolumeModalOpen, setFuelVolumeModalOpen] = useState(false);
@@ -62,19 +71,69 @@ const Index = () => {
   }, []);
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
+
+  // On initial mount, always reset the city filter to "all" so the map
+  // starts from the UK view regardless of any previous in-memory state.
+  useEffect(() => {
+    setSelectedCity('all');
+  }, []);
+
+  // Ensure that when the dashboard first loads (filters not applied yet),
+  // the city filter is reset to "all" so the map shows the UK view, not a
+  // previously cached city like London after a soft reload.
+  // Only reset when filters are not applied AND on initial mount - preserve city selection when filters are applied
+  const hasInitializedRef = useRef(false);
+  useEffect(() => {
+    if (!filtersApplied && !hasInitializedRef.current) {
+      setSelectedCity('all');
+      hasInitializedRef.current = true;
+    }
+  }, [filtersApplied]);
+
+  // Handle loading complete - fade in dashboard
+  // Use useCallback to prevent re-creation and re-triggering
+  const handleLoadingComplete = useCallback(() => {
+    // Only proceed if loading hasn't already completed
+    if (loadingCompletedRef.current) return;
+    
+    loadingCompletedRef.current = true;
+    setIsLoading(false);
+    // Small delay before showing dashboard for smooth transition
+    setTimeout(() => {
+      setDashboardVisible(true);
+    }, 100);
+  }, []);
   
   const handleApplyFilters = () => {
+    // Preserve the current city selection when applying filters
+    // Don't reset city to 'all' - keep whatever the user selected
     setFiltersApplied(true);
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} />
-      
-      <main 
-        style={{ willChange: 'margin-left' }}
-        className={`transition-[margin-left] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-0'} ml-0`}
+    <div className="min-h-screen bg-background relative">
+      {/* Spline Loading Screen */}
+      {isLoading && (
+        <SplineLoader 
+          onLoadingComplete={handleLoadingComplete}
+          isLoading={isLoading}
+        />
+      )}
+
+      {/* Main Dashboard - Animated Entry */}
+      <div
+        className={`transition-all duration-1000 ease-out ${
+          dashboardVisible
+            ? 'opacity-100 translate-y-0'
+            : 'opacity-0 translate-y-4 pointer-events-none'
+        }`}
       >
+        <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} />
+        
+        <main 
+          style={{ willChange: 'margin-left' }}
+          className={`transition-[margin-left] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-0'} ml-0`}
+        >
         <Header sidebarOpen={sidebarOpen} onToggleSidebar={toggleSidebar} />
         
         <div className="p-4 lg:p-6">
@@ -95,12 +154,15 @@ const Index = () => {
             <InitialLandingState 
               onApplyFilters={handleApplyFilters}
               selectedCity={selectedCity}
+              dashboardVisible={dashboardVisible}
             />
           )}
 
           {/* Main Dashboard - Show when filters applied */}
           {filtersApplied && (
             <>
+          {/* City Map - Always show when filters are applied (shows UK if 'all', city if selected) */}
+          <CityMap selectedCity={selectedCity || 'all'} />
 
           {/* Primary Metrics Grid - Row 1 */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5 mb-4 lg:mb-6">
@@ -322,6 +384,7 @@ const Index = () => {
           </CardDetailModal>
         </div>
       </main>
+      </div>
     </div>
   );
 };

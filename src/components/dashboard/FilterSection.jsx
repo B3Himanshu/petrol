@@ -68,6 +68,31 @@ export const FilterSection = ({ onApplyFilters, selectedCity, onCityChange }) =>
           </Select>
         </div>
 
+        {/* City */}
+        <div className="flex-1 min-w-[120px] sm:min-w-[150px]">
+          <label className="text-xs font-medium text-primary mb-2 block">
+            City
+          </label>
+          {/* When value is "all", we treat it as 'Select city' and show the whole UK map */}
+          <Select value={selectedCity || "all"} onValueChange={onCityChange}>
+            <SelectTrigger className="bg-background border-border">
+              <SelectValue placeholder="Select city" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Select city</SelectItem>
+              <SelectItem value="london">London</SelectItem>
+              <SelectItem value="manchester">Manchester</SelectItem>
+              <SelectItem value="birmingham">Birmingham</SelectItem>
+              <SelectItem value="glasgow">Glasgow</SelectItem>
+              <SelectItem value="liverpool">Liverpool</SelectItem>
+              <SelectItem value="leeds">Leeds</SelectItem>
+              <SelectItem value="edinburgh">Edinburgh</SelectItem>
+              <SelectItem value="bristol">Bristol</SelectItem>
+              <SelectItem value="cardiff">Cardiff</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         {/* Site */}
         <div className="flex-1 min-w-[120px] sm:min-w-[150px]">
           <label className="text-xs font-medium text-muted-foreground mb-2 block">
@@ -82,29 +107,6 @@ export const FilterSection = ({ onApplyFilters, selectedCity, onCityChange }) =>
               <SelectItem value="site1">Site 1</SelectItem>
               <SelectItem value="site2">Site 2</SelectItem>
               <SelectItem value="site3">Site 3</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* City */}
-        <div className="flex-1 min-w-[120px] sm:min-w-[150px]">
-          <label className="text-xs font-medium text-primary mb-2 block">
-            City
-          </label>
-          <Select value={selectedCity || "london"} onValueChange={onCityChange}>
-            <SelectTrigger className="bg-background border-border">
-              <SelectValue placeholder="Select city" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="london">London</SelectItem>
-              <SelectItem value="manchester">Manchester</SelectItem>
-              <SelectItem value="birmingham">Birmingham</SelectItem>
-              <SelectItem value="glasgow">Glasgow</SelectItem>
-              <SelectItem value="liverpool">Liverpool</SelectItem>
-              <SelectItem value="leeds">Leeds</SelectItem>
-              <SelectItem value="edinburgh">Edinburgh</SelectItem>
-              <SelectItem value="bristol">Bristol</SelectItem>
-              <SelectItem value="cardiff">Cardiff</SelectItem>
             </SelectContent>
           </Select>
         </div>
