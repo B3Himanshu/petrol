@@ -157,15 +157,23 @@
 
 @layer utilities {
   .animate-fade-in {
+    opacity: 0;
     animation: fadeIn 0.5s ease-out forwards;
+    will-change: opacity;
   }
   
   .animate-slide-up {
+    opacity: 0;
+    transform: translateY(20px);
     animation: slideUp 0.5s ease-out forwards;
+    will-change: opacity, transform;
   }
   
   .animate-scale-in {
+    opacity: 0;
+    transform: scale(0.95);
     animation: scaleIn 0.3s ease-out forwards;
+    will-change: opacity, transform;
   }
   
   /* Hide scrollbar but keep functionality */
@@ -208,6 +216,15 @@
     opacity: 1;
     transform: scale(1);
   }
+}
+
+/* Force GPU acceleration for better performance */
+.animate-fade-in,
+.animate-slide-up,
+.animate-scale-in {
+  backface-visibility: hidden;
+  perspective: 1000px;
+  transform: translateZ(0);
 }
 
 @keyframes fadeInOutline {

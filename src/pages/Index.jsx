@@ -96,12 +96,41 @@ const Index = () => {
     // Only proceed if loading hasn't already completed
     if (loadingCompletedRef.current) return;
     
-    loadingCompletedRef.current = true;
-    setIsLoading(false);
-    // Small delay before showing dashboard for smooth transition
-    setTimeout(() => {
-      setDashboardVisible(true);
-    }, 100);
+    // Ensure DOM is ready before showing dashboard
+    const showDashboard = () => {
+      // Use requestAnimationFrame for smooth transition
+      requestAnimationFrame(() => {
+        loadingCompletedRef.current = true;
+        setIsLoading(false);
+        // Smooth transition: wait for loader to fully fade out, then show dashboard
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            setDashboardVisible(true);
+          }, 300); // Small delay for smooth transition
+        });
+      });
+    };
+
+    // Wait for DOM and fonts to be ready
+    if (document.readyState === 'complete') {
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(() => {
+          showDashboard();
+        }).catch(() => {
+          setTimeout(showDashboard, 50);
+        });
+      } else {
+        setTimeout(showDashboard, 50);
+      }
+    } else if (document.readyState === 'interactive') {
+      window.addEventListener('load', () => {
+        setTimeout(showDashboard, 50);
+      }, { once: true });
+    } else {
+      document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(showDashboard, 100);
+      }, { once: true });
+    }
   }, []);
   
   const handleApplyFilters = () => {
@@ -122,10 +151,10 @@ const Index = () => {
 
       {/* Main Dashboard - Animated Entry */}
       <div
-        className={`transition-all duration-1000 ease-out ${
+        className={`transition-all duration-1200 ease-out ${
           dashboardVisible
             ? 'opacity-100 translate-y-0'
-            : 'opacity-0 translate-y-4 pointer-events-none'
+            : 'opacity-0 translate-y-0 pointer-events-none'
         }`}
       >
         <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} />

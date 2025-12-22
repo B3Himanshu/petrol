@@ -31,6 +31,19 @@ export const Header = ({ sidebarOpen, onToggleSidebar }) => {
         </div>
       </div>
 
+      {/* Company's Overall Sales - Simple Display */}
+      <div className="hidden lg:flex items-center gap-3 px-4 py-2 rounded-lg bg-muted/50 border border-border/50">
+        <div className="w-2 h-2 rounded-full bg-chart-green animate-pulse" />
+        <div className="flex flex-col">
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Sales</span>
+          <div className="flex items-baseline gap-1">
+            <span className="text-sm font-semibold text-muted-foreground">£</span>
+            <span className="text-lg font-bold text-foreground">39.27</span>
+            <span className="text-sm font-semibold text-muted-foreground">M</span>
+          </div>
+        </div>
+      </div>
+
       {/* Actions */}
       <div className="flex items-center gap-2 lg:gap-4">
         <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold hidden md:flex">
