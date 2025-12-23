@@ -1,44 +1,35 @@
 import { MapPin, Globe, ZoomIn, ZoomOut, Navigation, Layers, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect, useMemo } from "react";
+import { getUniqueCities } from "@/data/sitesData";
 
 // Lat/lon for each city so we can build a focused map view when a city is selected
+// Updated to match CityMap.jsx configuration
 const cityMapConfig = {
-  // Major cities (existing)
-  london: { lat: 51.5074, lon: -0.1278, delta: 1.0 },
-  manchester: { lat: 53.4808, lon: -2.2426, delta: 1.0 },
-  birmingham: { lat: 52.4862, lon: -1.8904, delta: 1.0 },
-  glasgow: { lat: 55.8642, lon: -4.2518, delta: 1.2 },
-  liverpool: { lat: 53.4084, lon: -2.9916, delta: 1.0 },
-  leeds: { lat: 53.8008, lon: -1.5491, delta: 1.0 },
-  edinburgh: { lat: 55.9533, lon: -3.1883, delta: 1.2 },
-  bristol: { lat: 51.4545, lon: -2.5879, delta: 1.0 },
-  cardiff: { lat: 51.4816, lon: -3.1791, delta: 1.0 },
-  // Additional major UK cities
-  newcastle: { lat: 54.9783, lon: -1.6178, delta: 1.0 },
-  sheffield: { lat: 53.3811, lon: -1.4701, delta: 1.0 },
-  nottingham: { lat: 52.9548, lon: -1.1581, delta: 1.0 },
-  leicester: { lat: 52.6369, lon: -1.1398, delta: 1.0 },
-  coventry: { lat: 52.4068, lon: -1.5197, delta: 1.0 },
+  // New cities from sites data
   southampton: { lat: 50.9097, lon: -1.4044, delta: 1.0 },
-  portsmouth: { lat: 50.8198, lon: -1.0880, delta: 1.0 },
-  brighton: { lat: 50.8225, lon: -0.1372, delta: 1.0 },
-  norwich: { lat: 52.6309, lon: 1.2974, delta: 1.0 },
-  cambridge: { lat: 52.2053, lon: 0.1218, delta: 1.0 },
-  oxford: { lat: 51.7520, lon: -1.2577, delta: 1.0 },
-  york: { lat: 53.9600, lon: -1.0873, delta: 1.0 },
-  hull: { lat: 53.7457, lon: -0.3367, delta: 1.0 },
-  derby: { lat: 52.9225, lon: -1.4746, delta: 1.0 },
-  stoke: { lat: 53.0258, lon: -2.1774, delta: 1.0 },
-  reading: { lat: 51.4543, lon: -0.9781, delta: 1.0 },
-  plymouth: { lat: 50.3755, lon: -4.1427, delta: 1.0 },
-  exeter: { lat: 50.7184, lon: -3.5339, delta: 1.0 },
-  bournemouth: { lat: 50.7192, lon: -1.8808, delta: 1.0 },
-  swansea: { lat: 51.6214, lon: -3.9436, delta: 1.0 },
-  belfast: { lat: 54.5973, lon: -5.9301, delta: 1.0 },
-  aberdeen: { lat: 57.1497, lon: -2.0943, delta: 1.2 },
-  dundee: { lat: 56.4620, lon: -2.9707, delta: 1.2 },
-  inverness: { lat: 57.4778, lon: -4.2247, delta: 1.2 },
+  guildford: { lat: 51.2362, lon: -0.5704, delta: 1.0 },
+  exmouth: { lat: 50.6192, lon: -3.4140, delta: 1.0 },
+  truro: { lat: 50.2632, lon: -5.0510, delta: 1.2 },
+  luton: { lat: 51.8797, lon: -0.4175, delta: 1.0 },
+  peterborough: { lat: 52.5739, lon: -0.2508, delta: 1.0 },
+  warrington: { lat: 53.3929, lon: -2.5964, delta: 1.0 },
+  wisbech: { lat: 52.6661, lon: 0.1595, delta: 1.0 },
+  huddersfield: { lat: 53.6458, lon: -1.7850, delta: 1.0 },
+  oldham: { lat: 53.5409, lon: -2.1114, delta: 1.0 },
+  matlock: { lat: 53.1384, lon: -1.5556, delta: 1.0 },
+  stafford: { lat: 52.8067, lon: -2.1168, delta: 1.0 },
+  birmingham: { lat: 52.4862, lon: -1.8904, delta: 1.0 },
+  weymouth: { lat: 50.6144, lon: -2.4576, delta: 1.0 },
+  lydney: { lat: 51.7247, lon: -2.5303, delta: 1.0 },
+  evesham: { lat: 52.0925, lon: -1.9475, delta: 1.0 },
+  crawley: { lat: 51.1090, lon: -0.1872, delta: 1.0 },
+  dudley: { lat: 52.5087, lon: -2.0877, delta: 1.0 },
+  shrewsbury: { lat: 52.7073, lon: -2.7553, delta: 1.0 },
+  burnley: { lat: 53.7893, lon: -2.2405, delta: 1.0 },
+  yeovil: { lat: 50.9406, lon: -2.6349, delta: 1.0 },
+  rotherham: { lat: 53.4308, lon: -1.3567, delta: 1.0 },
+  "bury-st-edmunds": { lat: 52.2469, lon: 0.7116, delta: 1.2 },
 };
 
 // Derive a tighter "visual UK" bounding box from the city coordinates so the
@@ -85,41 +76,30 @@ const PIN_OFFSET = {
 // Positive x -> right, positive y -> down
 // These offsets fine-tune each city pin to align perfectly with the map
 const CITY_OFFSETS = {
-  // Major cities (existing) - Reset to zero, will be fine-tuned based on actual map alignment
-  london: { x: 0, y: 0 },
-  manchester: { x: 0, y: 0 },
-  birmingham: { x: 0, y: 0 },
-  glasgow: { x: 0, y: 0 },
-  liverpool: { x: 0, y: 0 },
-  leeds: { x: 0, y: 0 },
-  edinburgh: { x: 0, y: 0 },
-  bristol: { x: 0, y: 0 },
-  cardiff: { x: 0, y: 0 },
-  // Additional cities - Reset to zero, will be fine-tuned based on actual map alignment
-  newcastle: { x: 0, y: 0 },
-  sheffield: { x: 0, y: 0 },
-  nottingham: { x: 0, y: 0 },
-  leicester: { x: 0, y: 0 },
-  coventry: { x: 0, y: 0 },
+  // Cities from sites data - Reset to zero, will be fine-tuned based on actual map alignment
   southampton: { x: 0, y: 0 },
-  portsmouth: { x: 0, y: 0 },
-  brighton: { x: 0, y: 0 },
-  norwich: { x: 0, y: 0 },
-  cambridge: { x: 0, y: 0 },
-  oxford: { x: 0, y: 0 },
-  york: { x: 0, y: 0 },
-  hull: { x: 0, y: 0 },
-  derby: { x: 0, y: 0 },
-  stoke: { x: 0, y: 0 },
-  reading: { x: 0, y: 0 },
-  plymouth: { x: 0, y: 0 },
-  exeter: { x: 0, y: 0 },
-  bournemouth: { x: 0, y: 0 },
-  swansea: { x: 0, y: 0 },
-  belfast: { x: 0, y: 0 },
-  aberdeen: { x: 0, y: 0 },
-  dundee: { x: 0, y: 0 },
-  inverness: { x: 0, y: 0 },
+  guildford: { x: 0, y: 0 },
+  exmouth: { x: 0, y: 0 },
+  truro: { x: 0, y: 0 },
+  luton: { x: 0, y: 0 },
+  peterborough: { x: 0, y: 0 },
+  warrington: { x: 0, y: 0 },
+  wisbech: { x: 0, y: 0 },
+  huddersfield: { x: 0, y: 0 },
+  oldham: { x: 0, y: 0 },
+  matlock: { x: 0, y: 0 },
+  stafford: { x: 0, y: 0 },
+  birmingham: { x: 0, y: 0 },
+  weymouth: { x: 0, y: 0 },
+  lydney: { x: 0, y: 0 },
+  evesham: { x: 0, y: 0 },
+  crawley: { x: 0, y: 0 },
+  dudley: { x: 0, y: 0 },
+  shrewsbury: { x: 0, y: 0 },
+  burnley: { x: 0, y: 0 },
+  yeovil: { x: 0, y: 0 },
+  rotherham: { x: 0, y: 0 },
+  "bury-st-edmunds": { x: 0, y: 0 },
 };
 
 // Convert degrees to radians
@@ -187,8 +167,11 @@ const buildGoogleEarthSrc = (zoom = 5, showMarkers = true) => {
   const ukLat = 54.2;  // Centered to show UK and Ireland together
   const ukLon = -2.8;  // Centered to show both UK and Ireland
   
-  // Cities in the filter - only these will have markers
-  const citiesInFilter = ['london', 'manchester', 'birmingham', 'glasgow', 'liverpool', 'leeds', 'edinburgh', 'bristol', 'cardiff'];
+  // Cities in the filter - use all cities from sites data
+  const citiesInFilter = useMemo(() => {
+    const cities = getUniqueCities();
+    return cities.map(city => city.id);
+  }, []);
   
   // Google Maps embed URL - satellite view of UK
   // Using a working embed format that shows UK in satellite/3D view
@@ -298,8 +281,11 @@ export const InitialLandingState = ({ onApplyFilters, selectedCity = 'all', dash
   const [animationComplete, setAnimationComplete] = useState(false);
   const [shouldStartAnimation, setShouldStartAnimation] = useState(false);
   
-  // Cities in the filter - only these will have markers
-  const citiesInFilter = ['london', 'manchester', 'birmingham', 'glasgow', 'liverpool', 'leeds', 'edinburgh', 'bristol', 'cardiff'];
+  // Cities in the filter - use all cities from sites data
+  const citiesInFilter = useMemo(() => {
+    const cities = getUniqueCities();
+    return cities.map(city => city.id);
+  }, []);
   
   // Use the Google Maps embed URL that includes UK cities with markers
   // This embed already shows cities with markers on the map - no API key needed!

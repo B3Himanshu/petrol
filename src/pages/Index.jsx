@@ -48,8 +48,6 @@ const Index = () => {
   const [selectedMonth, setSelectedMonth] = useState(null);
   const [selectedYear, setSelectedYear] = useState(null);
   const [selectedSite, setSelectedSite] = useState(null);
-  // Default to "all" so the dashboard always starts on the full UK map
-  const [selectedCity, setSelectedCity] = useState('all');
 
   // Modal states for card clicks
   const [fuelVolumeModalOpen, setFuelVolumeModalOpen] = useState(false);
@@ -71,24 +69,6 @@ const Index = () => {
   }, []);
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
-
-  // On initial mount, always reset the city filter to "all" so the map
-  // starts from the UK view regardless of any previous in-memory state.
-  useEffect(() => {
-    setSelectedCity('all');
-  }, []);
-
-  // Ensure that when the dashboard first loads (filters not applied yet),
-  // the city filter is reset to "all" so the map shows the UK view, not a
-  // previously cached city like London after a soft reload.
-  // Only reset when filters are not applied AND on initial mount - preserve city selection when filters are applied
-  const hasInitializedRef = useRef(false);
-  useEffect(() => {
-    if (!filtersApplied && !hasInitializedRef.current) {
-      setSelectedCity('all');
-      hasInitializedRef.current = true;
-    }
-  }, [filtersApplied]);
 
   // Handle loading complete - fade in dashboard
   // Use useCallback to prevent re-creation and re-triggering
@@ -134,8 +114,12 @@ const Index = () => {
   }, []);
   
   const handleApplyFilters = () => {
-    // Preserve the current city selection when applying filters
-    // Don't reset city to 'all' - keep whatever the user selected
+    // Only apply filters if a specific site is selected
+    if (!selectedSite || selectedSite === 'all') {
+      return;
+    }
+    // Filters are applied in FilterSection component
+    // This just sets the flag to show the dashboard
     setFiltersApplied(true);
   };
 
@@ -174,15 +158,15 @@ const Index = () => {
           {/* Filter Section */}
           <FilterSection 
             onApplyFilters={handleApplyFilters}
-            selectedCity={selectedCity}
-            onCityChange={setSelectedCity}
+            selectedSite={selectedSite}
+            onSiteChange={setSelectedSite}
+            filtersApplied={filtersApplied}
           />
 
           {/* Initial Landing State - Show when filters not applied */}
           {!filtersApplied && (
             <InitialLandingState 
               onApplyFilters={handleApplyFilters}
-              selectedCity={selectedCity}
               dashboardVisible={dashboardVisible}
             />
           )}
@@ -190,8 +174,8 @@ const Index = () => {
           {/* Main Dashboard - Show when filters applied */}
           {filtersApplied && (
             <>
-          {/* City Map - Always show when filters are applied (shows UK if 'all', city if selected) */}
-          <CityMap selectedCity={selectedCity || 'all'} />
+          {/* Site Map - Show map for selected site */}
+          <CityMap selectedSite={selectedSite || 'all'} />
 
           {/* Primary Metrics Grid - Row 1 */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5 mb-4 lg:mb-6">

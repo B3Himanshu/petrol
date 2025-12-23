@@ -1,19 +1,35 @@
 import { useState, useEffect, useMemo } from "react";
 import { MapPin, Navigation } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getSiteById } from "@/data/sitesData";
 
 // City coordinates configuration with optimized zoom levels for city-specific views
 // Delta values control the zoom level - smaller = more zoomed in
 const cityMapConfig = {
-  london: { lat: 51.5074, lon: -0.1278, delta: 0.15 },      // Closer view for London
-  manchester: { lat: 53.4808, lon: -2.2426, delta: 0.2 },
+  // New cities from sites data
+  southampton: { lat: 50.9097, lon: -1.4044, delta: 0.2 },
+  guildford: { lat: 51.2362, lon: -0.5704, delta: 0.2 },
+  exmouth: { lat: 50.6192, lon: -3.4140, delta: 0.2 },
+  truro: { lat: 50.2632, lon: -5.0510, delta: 0.2 },
+  luton: { lat: 51.8797, lon: -0.4175, delta: 0.2 },
+  peterborough: { lat: 52.5739, lon: -0.2508, delta: 0.2 },
+  warrington: { lat: 53.3929, lon: -2.5964, delta: 0.2 },
+  wisbech: { lat: 52.6661, lon: 0.1595, delta: 0.2 },
+  huddersfield: { lat: 53.6458, lon: -1.7850, delta: 0.2 },
+  oldham: { lat: 53.5409, lon: -2.1114, delta: 0.2 },
+  matlock: { lat: 53.1384, lon: -1.5556, delta: 0.2 },
+  stafford: { lat: 52.8067, lon: -2.1168, delta: 0.2 },
   birmingham: { lat: 52.4862, lon: -1.8904, delta: 0.2 },
-  glasgow: { lat: 55.8642, lon: -4.2518, delta: 0.25 },
-  liverpool: { lat: 53.4084, lon: -2.9916, delta: 0.2 },
-  leeds: { lat: 53.8008, lon: -1.5491, delta: 0.2 },
-  edinburgh: { lat: 55.9533, lon: -3.1883, delta: 0.25 },
-  bristol: { lat: 51.4545, lon: -2.5879, delta: 0.2 },
-  cardiff: { lat: 51.4816, lon: -3.1791, delta: 0.2 },
+  weymouth: { lat: 50.6144, lon: -2.4576, delta: 0.2 },
+  lydney: { lat: 51.7247, lon: -2.5303, delta: 0.2 },
+  evesham: { lat: 52.0925, lon: -1.9475, delta: 0.2 },
+  crawley: { lat: 51.1090, lon: -0.1872, delta: 0.2 },
+  dudley: { lat: 52.5087, lon: -2.0877, delta: 0.2 },
+  shrewsbury: { lat: 52.7073, lon: -2.7553, delta: 0.2 },
+  burnley: { lat: 53.7893, lon: -2.2405, delta: 0.2 },
+  yeovil: { lat: 50.9406, lon: -2.6349, delta: 0.2 },
+  rotherham: { lat: 53.4308, lon: -1.3567, delta: 0.2 },
+  "bury-st-edmunds": { lat: 52.2469, lon: 0.7116, delta: 0.2 },
 };
 
 // UK bounding box for overall view
@@ -57,9 +73,21 @@ const buildMapSrc = (selectedCity) => {
 };
 
 // CityMap component for dashboard
-export const CityMap = ({ selectedCity = 'all' }) => {
+export const CityMap = ({ selectedSite = 'all' }) => {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapKey, setMapKey] = useState(0); // Force iframe reload with key change
+  
+  // Get the site data and extract city from it
+  const siteData = useMemo(() => {
+    if (!selectedSite || selectedSite === 'all') return null;
+    return getSiteById(selectedSite);
+  }, [selectedSite]);
+
+  // Get city from site data
+  const selectedCity = useMemo(() => {
+    if (!siteData) return 'all';
+    return siteData.city;
+  }, [siteData]);
   
   // Build map source - use useMemo to recalculate when city changes
   const mapSrc = useMemo(() => {
@@ -67,29 +95,24 @@ export const CityMap = ({ selectedCity = 'all' }) => {
     return src;
   }, [selectedCity]);
   
-  // Reset map loaded state and force iframe reload when city changes
+  // Reset map loaded state and force iframe reload when site changes
   useEffect(() => {
     setMapLoaded(false);
     // Force iframe reload by changing key
     setMapKey(prev => prev + 1);
-  }, [selectedCity]);
+  }, [selectedSite]);
 
   // Format city name properly - memoized for performance
   const cityName = useMemo(() => {
-    if (!selectedCity || selectedCity === 'all') return 'United Kingdom';
-    const cityNames = {
-      london: 'London',
-      manchester: 'Manchester',
-      birmingham: 'Birmingham',
-      glasgow: 'Glasgow',
-      liverpool: 'Liverpool',
-      leeds: 'Leeds',
-      edinburgh: 'Edinburgh',
-      bristol: 'Bristol',
-      cardiff: 'Cardiff',
-    };
-    return cityNames[selectedCity] || selectedCity.charAt(0).toUpperCase() + selectedCity.slice(1);
-  }, [selectedCity]);
+    if (!siteData) return 'United Kingdom';
+    return siteData.cityDisplay || siteData.name;
+  }, [siteData]);
+
+  // Get site name for display
+  const siteName = useMemo(() => {
+    if (!siteData) return null;
+    return siteData.name;
+  }, [siteData]);
 
   // Calculate pin position for selected city - memoized for performance
   // This calculates the relative position of the city within the map bounding box
@@ -136,7 +159,7 @@ export const CityMap = ({ selectedCity = 'all' }) => {
             <h3 className="text-lg font-bold text-foreground">Location Overview</h3>
             <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5">
               <Navigation className="w-3 h-3" />
-              {cityName}
+              {siteName ? `${siteName}, ${cityName}` : cityName}
             </p>
           </div>
         </div>
@@ -164,7 +187,7 @@ export const CityMap = ({ selectedCity = 'all' }) => {
         {/* Map Frame */}
         <div className="relative w-full h-[400px] lg:h-[500px]">
           <iframe
-            key={`map-${selectedCity}-${mapKey}`}
+            key={`map-${selectedSite}-${mapKey}`}
             width="100%"
             height="100%"
             frameBorder="0"
@@ -173,7 +196,7 @@ export const CityMap = ({ selectedCity = 'all' }) => {
             marginWidth="0"
             src={mapSrc}
             style={{ border: 0, pointerEvents: "none" }}
-            title={`Map view of ${cityName}`}
+            title={`Map view of ${siteName || cityName}`}
             onLoad={() => {
               setMapLoaded(true);
             }}

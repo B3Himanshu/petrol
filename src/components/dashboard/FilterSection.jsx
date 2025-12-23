@@ -7,9 +7,37 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { sitesData } from "@/data/sitesData";
+import { useState, useEffect, useMemo } from "react";
 
 // Clean JSX FilterSection (no TypeScript, no BOM)
-export const FilterSection = ({ onApplyFilters, selectedCity, onCityChange }) => {
+export const FilterSection = ({ onApplyFilters, selectedSite, onSiteChange, filtersApplied }) => {
+  // Local state for filter selections - these are only applied when "Apply Filters" is clicked
+  const [localSelectedSite, setLocalSelectedSite] = useState(selectedSite || "all");
+  // Show all sites without city filtering
+  const availableSites = useMemo(() => sitesData, []);
+
+  // Sync local state with props when they change externally (e.g., reset)
+  useEffect(() => {
+    setLocalSelectedSite(selectedSite || "all");
+  }, [selectedSite]);
+
+  const handleLocalSiteChange = (value) => {
+    setLocalSelectedSite(value);
+  };
+
+  const handleApplyFilters = () => {
+    // Require a site selection before applying filters
+    if (!localSelectedSite || localSelectedSite === 'all') {
+      return;
+    }
+    // Apply the local selection to the actual state
+    if (onSiteChange) {
+      onSiteChange(localSelectedSite);
+    }
+    // Trigger the apply filters callback
+    onApplyFilters();
+  };
   return (
     <div className="chart-card mb-4 lg:mb-6 animate-slide-up">
       <div className="flex items-center justify-between mb-3 lg:mb-4">
@@ -68,51 +96,28 @@ export const FilterSection = ({ onApplyFilters, selectedCity, onCityChange }) =>
           </Select>
         </div>
 
-        {/* City */}
-        <div className="flex-1 min-w-[120px] sm:min-w-[150px]">
-          <label className="text-xs font-medium text-primary mb-2 block">
-            City
-          </label>
-          {/* When value is "all", we treat it as 'Select city' and show the whole UK map */}
-          <Select value={selectedCity || "all"} onValueChange={onCityChange}>
-            <SelectTrigger className="bg-background border-border">
-              <SelectValue placeholder="Select city" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Select city</SelectItem>
-              <SelectItem value="london">London</SelectItem>
-              <SelectItem value="manchester">Manchester</SelectItem>
-              <SelectItem value="birmingham">Birmingham</SelectItem>
-              <SelectItem value="glasgow">Glasgow</SelectItem>
-              <SelectItem value="liverpool">Liverpool</SelectItem>
-              <SelectItem value="leeds">Leeds</SelectItem>
-              <SelectItem value="edinburgh">Edinburgh</SelectItem>
-              <SelectItem value="bristol">Bristol</SelectItem>
-              <SelectItem value="cardiff">Cardiff</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
         {/* Site */}
         <div className="flex-1 min-w-[120px] sm:min-w-[150px]">
           <label className="text-xs font-medium text-muted-foreground mb-2 block">
             Site
           </label>
-          <Select defaultValue="all">
+          <Select value={localSelectedSite} onValueChange={handleLocalSiteChange}>
             <SelectTrigger className="bg-background border-border">
               <SelectValue placeholder="Select site" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Sites</SelectItem>
-              <SelectItem value="site1">Site 1</SelectItem>
-              <SelectItem value="site2">Site 2</SelectItem>
-              <SelectItem value="site3">Site 3</SelectItem>
+              {availableSites.map((site) => (
+                <SelectItem key={site.id} value={site.id.toString()}>
+                  {site.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
 
         <Button 
-          onClick={onApplyFilters}
+          onClick={handleApplyFilters}
           className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-4 lg:px-6 w-full sm:w-auto"
         >
           Apply Filters
