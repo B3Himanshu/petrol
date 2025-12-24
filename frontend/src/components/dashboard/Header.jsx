@@ -1,10 +1,23 @@
-import { Search, Bell, Plus, Menu, X, Moon, Sun } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Search, Bell, Menu, X, Moon, Sun } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/contexts/ThemeContext";
 
-export const Header = ({ sidebarOpen, onToggleSidebar }) => {
+export const Header = ({ sidebarOpen, onToggleSidebar, totalSales }) => {
   const { theme, toggleTheme } = useTheme();
+
+  // Format total sales value
+  const formatTotalSales = (amount) => {
+    if (!amount) return { number: "0", unit: "" };
+    if (amount >= 1000000) {
+      return { number: (amount / 1000000).toFixed(2), unit: "M" };
+    }
+    if (amount >= 1000) {
+      return { number: (amount / 1000).toFixed(2), unit: "K" };
+    }
+    return { number: amount.toFixed(2), unit: "" };
+  };
+
+  const salesFormatted = formatTotalSales(totalSales || 0);
 
   return (
     <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 lg:px-6">
@@ -31,30 +44,17 @@ export const Header = ({ sidebarOpen, onToggleSidebar }) => {
         </div>
       </div>
 
-      {/* Company's Overall Sales - Simple Display */}
-      <div className="hidden lg:flex items-center gap-3 px-4 py-2 rounded-lg bg-muted/50 border border-border/50">
-        <div className="w-2 h-2 rounded-full bg-chart-green animate-pulse" />
-        <div className="flex flex-col">
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Sales</span>
-          <div className="flex items-baseline gap-1">
-            <span className="text-sm font-semibold text-muted-foreground">£</span>
-            <span className="text-lg font-bold text-foreground">39.27</span>
-            <span className="text-sm font-semibold text-muted-foreground">M</span>
-          </div>
-        </div>
-      </div>
-
       {/* Actions */}
       <div className="flex items-center gap-2 lg:gap-4">
-        <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold hidden md:flex">
-          <Plus className="w-4 h-4 mr-2" />
-          New Order
-        </Button>
-
-        {/* Mobile: Just Plus Icon */}
-        <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold md:hidden p-2">
-          <Plus className="w-5 h-5" />
-        </Button>
+        {/* Total Sales - Yellow Button Style */}
+        <div className="hidden lg:flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold shadow-sm" style={{ backgroundColor: '#FFA500', color: '#000000' }}>
+          <span className="text-sm font-semibold text-black">Total Sales:</span>
+          <div className="flex items-baseline gap-1">
+            <span className="text-sm font-medium text-black/70">£</span>
+            <span className="text-base font-bold text-black">{salesFormatted.number}</span>
+            {salesFormatted.unit && <span className="text-sm font-semibold" style={{ color: '#4A90E2' }}>{salesFormatted.unit}</span>}
+          </div>
+        </div>
 
         {/* Dark Mode Toggle */}
         <button

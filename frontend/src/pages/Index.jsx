@@ -281,7 +281,11 @@ const Index = () => {
           style={{ willChange: 'margin-left' }}
           className={`transition-[margin-left] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-0'} ml-0`}
         >
-        <Header sidebarOpen={sidebarOpen} onToggleSidebar={toggleSidebar} />
+        <Header 
+          sidebarOpen={sidebarOpen} 
+          onToggleSidebar={toggleSidebar} 
+          totalSales={metrics?.netSales}
+        />
         
         <div className="p-4 lg:p-6">
           {/* Page Title */}
