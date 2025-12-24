@@ -2,11 +2,16 @@
 node_modules/
 */node_modules/
 
-# Environment variables
+# Environment variables - NEVER COMMIT THESE
 .env
 .env.local
 .env.*.local
+.env.*
 backend/.env
+frontend/.env
+frontend/.env.local
+*.env
+!.env.example
 
 # Build outputs
 dist/
@@ -35,3 +40,16 @@ Thumbs.db
 # Lock files (optional - you may want to commit these)
 # package-lock.json
 # bun.lockb
+
+# Data files (may contain sensitive information)
+*.xlsx
+*.xls
+*.csv
+*.sql
+~$*.xlsx
+~$*.xls
+
+# Temporary files
+*.tmp
+*.temp
+*~

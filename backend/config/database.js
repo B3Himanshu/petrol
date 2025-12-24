@@ -9,10 +9,10 @@ const { Pool } = pg;
 const getConnectionConfig = () => {
   // If DATABASE_URL is provided, use it (but add SSL for Google Cloud SQL)
   if (process.env.DATABASE_URL) {
-    // Check if it's a Google Cloud SQL connection (has IP address or cloud sql domain)
-    const isCloudSQL = process.env.DATABASE_URL.includes('104.198.46.255') || 
-                       process.env.DATABASE_URL.includes('cloudsql') ||
-                       process.env.DATABASE_URL.includes('googleapis.com');
+    // Check if it's a Google Cloud SQL connection (has cloud sql domain or is not localhost)
+    const isCloudSQL = process.env.DATABASE_URL.includes('cloudsql') ||
+                       process.env.DATABASE_URL.includes('googleapis.com') ||
+                       (!process.env.DATABASE_URL.includes('localhost') && !process.env.DATABASE_URL.includes('127.0.0.1'));
     
     // Remove sslmode from URL - we'll handle SSL programmatically
     // This prevents the URL parameter from overriding our SSL config
@@ -34,9 +34,9 @@ const getConnectionConfig = () => {
   
   // Otherwise use individual settings
   const isCloudSQL = process.env.DB_HOST && 
-                     (process.env.DB_HOST.includes('104.198.46.255') || 
-                      process.env.DB_HOST.includes('cloudsql') ||
-                      process.env.DB_HOST !== 'localhost');
+                     (process.env.DB_HOST.includes('cloudsql') ||
+                      process.env.DB_HOST.includes('googleapis.com') ||
+                      (process.env.DB_HOST !== 'localhost' && process.env.DB_HOST !== '127.0.0.1'));
   
   return {
     host: process.env.DB_HOST || 'localhost',
