@@ -395,6 +395,7 @@ const Index = () => {
               <MetricCard
                 title="Total Fuel Volume"
                 value={formatVolume(metrics.totalFuelVolume)}
+                rawValue={metrics.totalFuelVolume}
                 subtitle="Litres Sold"
                 icon={Fuel}
                 iconBg="blue"
@@ -406,6 +407,7 @@ const Index = () => {
               <MetricCard
                 title="Net Sales (Pounds)"
                 value={formatCurrency(metrics.netSales)}
+                rawValue={metrics.netSales}
                 subtitle="Revenue generated"
                 icon={IndianRupee}
                 iconBg="green"
@@ -417,6 +419,7 @@ const Index = () => {
               <MetricCard
                 title="Profit (pounds)"
                 value={formatCurrency(metrics.profit)}
+                rawValue={metrics.profit}
                 subtitle="Total Earnings"
                 icon={TrendingUp}
                 iconBg="purple"
@@ -428,6 +431,7 @@ const Index = () => {
               <MetricCard
                 title="Avg PPL"
                 value={`${metrics.avgPPL?.toFixed(2) || '0.00'} p`}
+                rawValue={metrics.avgPPL}
                 subtitle="Profit Per liter"
                 icon={BarChart}
                 iconBg="orange"
@@ -443,7 +447,8 @@ const Index = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5 mb-4 lg:mb-6">
               <MetricCard
                 title="Actual PPL"
-                value={formatCurrency(metrics.actualPPL)}         
+                value={formatCurrency(metrics.actualPPL)}
+                rawValue={metrics.actualPPL}
                 subtitle="Average"
                 icon={Percent}
                 iconBg="yellow"
@@ -454,6 +459,7 @@ const Index = () => {
               <MetricCard
                 title="Labour cost as % per shop sales"
                 value={`${metrics.labourCostPercent?.toFixed(1) || '0'}%`}
+                rawValue={metrics.labourCostPercent}
                 subtitle="per shop sales"
                 icon={ShoppingCart}
                 iconBg="pink"
@@ -464,6 +470,7 @@ const Index = () => {
               <MetricCard
                 title="Basket Size"
                 value={formatCurrency(metrics.basketSize)}
+                rawValue={metrics.basketSize}
                 subtitle="Average order value"
                 icon={ShoppingBag}
                 iconBg="yellow"
@@ -474,6 +481,7 @@ const Index = () => {
               <MetricCard
                 title="Customer Count"
                 value={formatNumber(metrics.customerCount)}
+                rawValue={metrics.customerCount}
                 subtitle="This month"
                 icon={Users}
                 iconBg="purple"

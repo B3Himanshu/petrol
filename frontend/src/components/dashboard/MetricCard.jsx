@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { LineChart, Line, BarChart, Bar, ResponsiveContainer } from "recharts";
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState, useEffect, useRef } from "react";
 
 const iconBgColors = {
   blue: "bg-metric-blue/10 text-metric-blue",
@@ -20,6 +20,69 @@ const chartColors = {
   pink: "#ec4899",
 };
 
+// Helper function to parse numeric value from formatted string
+const parseNumericValue = (formattedValue, originalValue) => {
+  // If originalValue is provided and is a number, use it
+  if (originalValue !== undefined && originalValue !== null && typeof originalValue === 'number') {
+    return originalValue;
+  }
+  
+  // Try to parse from formatted string
+  if (typeof formattedValue === 'string') {
+    // Remove currency symbols, commas, and extract number
+    const cleaned = formattedValue.replace(/[£$,\s]/g, '');
+    // Handle suffixes like M, k, ML, L, p, %
+    const match = cleaned.match(/^([\d.]+)([MkLp%]*)$/);
+    if (match) {
+      let num = parseFloat(match[1]);
+      const suffix = match[2].toLowerCase();
+      if (suffix.includes('m')) num *= 1000000;
+      else if (suffix.includes('k')) num *= 1000;
+      return num;
+    }
+    return parseFloat(cleaned) || 0;
+  }
+  
+  return 0;
+};
+
+// Helper function to format value based on type
+const formatAnimatedValue = (value, formattedValue, title) => {
+  if (typeof formattedValue === 'string') {
+    // Detect format type from original string and title
+    const lowerTitle = (title || '').toLowerCase();
+    
+    // Volume format (ML, L)
+    if (formattedValue.includes('ML') || formattedValue.includes('L') || lowerTitle.includes('volume')) {
+      if (value >= 1000000) return `${(value / 1000000).toFixed(1)}ML`;
+      if (value >= 1000) return `${(value / 1000).toFixed(0)}k L`;
+      return `${value.toFixed(0)} L`;
+    }
+    
+    // Currency format (£)
+    if (formattedValue.includes('£') || lowerTitle.includes('sales') || lowerTitle.includes('profit') || 
+        lowerTitle.includes('basket') || lowerTitle.includes('actual ppl')) {
+      if (value >= 1000000) return `£${(value / 1000000).toFixed(1)}M`;
+      if (value >= 1000) return `£${(value / 1000).toFixed(0)}k`;
+      return `£${value.toFixed(2)}`;
+    }
+    
+    // Percentage format (%)
+    if (formattedValue.includes('%') || lowerTitle.includes('percent') || lowerTitle.includes('%')) {
+      return `${value.toFixed(1)}%`;
+    }
+    
+    // Pence format (p)
+    if (formattedValue.includes(' p') || lowerTitle.includes('ppl')) {
+      return `${value.toFixed(2)} p`;
+    }
+    
+    // Number format (customer count, etc.)
+    return value.toLocaleString();
+  }
+  return formattedValue;
+};
+
 // Pure JSX version (no TypeScript types)
 const MetricCardComponent = ({ 
   title, 
@@ -33,8 +96,77 @@ const MetricCardComponent = ({
   delay = 0,
   chartType = "none",
   chartData = [],
-  onClick
+  onClick,
+  rawValue // New prop for raw numeric value
 }) => {
+  const [animationProgress, setAnimationProgress] = useState(0);
+  const [hasAnimated, setHasAnimated] = useState(false);
+  const cardRef = useRef(null);
+
+  // Parse the numeric value
+  const numericValue = useMemo(() => {
+    return parseNumericValue(value, rawValue);
+  }, [value, rawValue]);
+
+  // Intersection Observer for scroll-triggered animation
+  useEffect(() => {
+    if (!cardRef.current || hasAnimated || numericValue === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !hasAnimated) {
+            setHasAnimated(true);
+            // Start animation
+            let startTime = null;
+            const duration = 1500; // 1.5 seconds
+
+            const animate = (timestamp) => {
+              if (!startTime) startTime = timestamp;
+              const progress = Math.min((timestamp - startTime) / duration, 1);
+              
+              // Easing function for smooth animation (ease-out)
+              const easedProgress = 1 - Math.pow(1 - progress, 3);
+              setAnimationProgress(easedProgress);
+
+              if (progress < 1) {
+                requestAnimationFrame(animate);
+              } else {
+                setAnimationProgress(1);
+              }
+            };
+
+            requestAnimationFrame(animate);
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      {
+        threshold: 0.3, // Trigger when 30% of the card is visible
+        rootMargin: '0px',
+      }
+    );
+
+    observer.observe(cardRef.current);
+
+    return () => {
+      if (cardRef.current) {
+        observer.unobserve(cardRef.current);
+      }
+    };
+  }, [numericValue, hasAnimated]);
+
+  // Reset animation when value changes
+  useEffect(() => {
+    setHasAnimated(false);
+    setAnimationProgress(0);
+  }, [numericValue]);
+
+  // Calculate animated value
+  const animatedValue = numericValue * animationProgress;
+  const displayValue = hasAnimated && animationProgress < 1 
+    ? formatAnimatedValue(animatedValue, value, title)
+    : value;
   // Transform chartData for recharts - memoized to prevent recalculation
   const formattedChartData = useMemo(() => {
     return chartData.map((value, index) => ({
@@ -45,6 +177,7 @@ const MetricCardComponent = ({
 
   return (
     <div 
+      ref={cardRef}
       className={cn(
         "relative bg-card rounded-2xl p-5 border border-border shadow-sm hover:shadow-md transition-all duration-300 animate-slide-up overflow-hidden group",
         onClick && "cursor-pointer"
@@ -69,7 +202,7 @@ const MetricCardComponent = ({
 
       {/* Value */}
       <div className="mb-3">
-        <h3 className="text-3xl font-bold text-foreground tracking-tight">{value}</h3>
+        <h3 className="text-3xl font-bold text-foreground tracking-tight">{displayValue}</h3>
         {subtitle && (
           <p className="text-xs text-muted-foreground mt-1.5">{subtitle}</p>
         )}

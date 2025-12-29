@@ -1,32 +1,8 @@
-import { useState, useEffect } from "react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import { useState, useEffect, useMemo, useRef } from "react";
+import Plot from "react-plotly.js";
 import { TrendingUp } from "lucide-react";
 import { dashboardAPI } from "@/services/api";
 
-// Custom Tooltip component with theme-aware colors
-const CustomTooltip = ({ active, payload }) => {
-  if (active && payload && payload.length) {
-    return (
-      <div 
-        className="rounded-lg p-3 shadow-xl min-w-[180px]"
-        style={{
-          backgroundColor: "hsl(222, 47%, 11%)",
-          border: "1px solid hsl(217, 33%, 17%)",
-          color: "#ffffff",
-          zIndex: 99999,
-        }}
-      >
-        <p className="font-semibold text-sm mb-2" style={{ color: "#ffffff" }}>
-          {payload[0].name}
-        </p>
-        <p className="text-sm font-medium" style={{ color: "#ffffff" }}>
-          Sales: £{payload[0].value.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-        </p>
-      </div>
-    );
-  }
-  return null;
-};
 
 const colorMap = {
   "Fuel Sales": "#3b82f6",
@@ -39,6 +15,9 @@ const colorMap = {
 export const OverallSalesPieChart = ({ siteId, month, months, year, years }) => {
   const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [animationProgress, setAnimationProgress] = useState(0);
+  const [hasAnimated, setHasAnimated] = useState(false);
+  const chartRef = useRef(null);
 
   useEffect(() => {
     if (!siteId || siteId === 'all') {
@@ -101,32 +80,11 @@ export const OverallSalesPieChart = ({ siteId, month, months, year, years }) => 
 
     fetchData();
   }, [siteId, month, months, year, years]);
-  if (loading) {
-    return (
-      <div className="chart-card h-[420px] animate-slide-up" style={{ animationDelay: "400ms" }}>
-        <div className="flex items-center justify-center h-full">
-          <div className="text-muted-foreground">Loading chart data...</div>
-        </div>
-      </div>
-    );
-  }
 
-  if (!chartData || chartData.length === 0) {
-    return (
-      <div className="chart-card h-[420px] animate-slide-up" style={{ animationDelay: "400ms" }}>
-        <h3 className="text-lg font-semibold text-foreground mb-4">
-          Overall Sales (Pie Chart)
-        </h3>
-        <div className="flex items-center justify-center h-[320px]">
-          <div className="text-muted-foreground">No data available</div>
-        </div>
-      </div>
-    );
-  }
-
-  // Calculate total for center label
+  // Calculate total for center label (safe even if chartData is empty)
   const total = chartData.reduce((sum, item) => sum + item.value, 0);
-  const hasMultipleSegments = chartData.length > 1;
+  // Animated total for center display
+  const animatedTotal = total * animationProgress;
 
   // Format total for display
   const formatTotal = (value) => {
@@ -138,9 +96,241 @@ export const OverallSalesPieChart = ({ siteId, month, months, year, years }) => 
     return `£${value.toFixed(0)}`;
   };
 
+  // Format currency for display
+  const formatCurrency = (value) => {
+    return `£${value.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  // Intersection Observer for scroll-triggered animation
+  useEffect(() => {
+    if (!chartRef.current || hasAnimated || !chartData || chartData.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !hasAnimated) {
+            setHasAnimated(true);
+            // Start animation
+            let startTime = null;
+            const duration = 1500; // 1.5 seconds
+
+            const animate = (timestamp) => {
+              if (!startTime) startTime = timestamp;
+              const progress = Math.min((timestamp - startTime) / duration, 1);
+              
+              // Easing function for smooth animation (ease-out)
+              const easedProgress = 1 - Math.pow(1 - progress, 3);
+              setAnimationProgress(easedProgress);
+
+              if (progress < 1) {
+                requestAnimationFrame(animate);
+              } else {
+                setAnimationProgress(1);
+              }
+            };
+
+            requestAnimationFrame(animate);
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      {
+        threshold: 0.2, // Trigger when 20% of the chart is visible
+        rootMargin: '0px',
+      }
+    );
+
+    observer.observe(chartRef.current);
+
+    return () => {
+      if (chartRef.current) {
+        observer.unobserve(chartRef.current);
+      }
+    };
+  }, [chartData, hasAnimated]);
+
+  // Reset animation when data changes
+  useEffect(() => {
+    setHasAnimated(false);
+    setAnimationProgress(0);
+  }, [chartData]);
+
+  // Apply text shadow styling to Plotly pie chart text
+  useEffect(() => {
+    if (!chartData || chartData.length === 0) return;
+
+    const applyTextStyling = () => {
+      const pieTextElements = document.querySelectorAll('.js-plotly-plot .pie text');
+      pieTextElements.forEach((textEl) => {
+        textEl.style.textShadow = '2px 2px 4px rgba(0, 0, 0, 0.9), -2px -2px 4px rgba(0, 0, 0, 0.9), 2px -2px 4px rgba(0, 0, 0, 0.9), -2px 2px 4px rgba(0, 0, 0, 0.9)';
+        textEl.style.fontWeight = 'bold';
+      });
+    };
+
+    applyTextStyling();
+    const timeoutId = setTimeout(applyTextStyling, 100);
+    const observer = new MutationObserver(applyTextStyling);
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+      clearTimeout(timeoutId);
+      observer.disconnect();
+    };
+  }, [chartData, loading, animationProgress]);
+
+  // Prepare Plotly pie chart data (must be before early returns)
+  const plotlyData = useMemo(() => {
+    if (!chartData || chartData.length === 0) return null;
+
+    const labels = chartData.map(item => item.name);
+    // Animate values from 0 to actual values based on animationProgress
+    const values = chartData.map(item => item.value * animationProgress);
+    const colors = chartData.map(item => item.color);
+
+    return {
+      data: [{
+        labels: labels,
+        values: values,
+        type: 'pie',
+        hole: 0.5, // Slightly larger hole for better center text visibility
+        marker: {
+          colors: colors,
+          line: {
+            color: 'hsl(var(--background))',
+            width: 2,
+          },
+        },
+        textinfo: 'percent',
+        textposition: 'inside',
+        textfont: {
+          size: 13,
+          color: '#ffffff',
+          family: 'Arial, sans-serif',
+        },
+        insidetextorientation: 'radial',
+        hovertemplate: '<span style="color: white;"><b>%{label}</b><br>' +
+          'Sales: £%{value:,.2f}<br>' +
+          'Percentage: %{percent}<br>' +
+          '</span><extra></extra>',
+        rotation: 90,
+        sort: false,
+      }],
+      layout: {
+        title: {
+          text: '',
+        },
+        annotations: [
+          {
+            text: 'Total Sales',
+            x: 0.5,
+            y: 0.55,
+            xref: 'paper',
+            yref: 'paper',
+            showarrow: false,
+            font: {
+              size: 13,
+              color: 'hsl(var(--muted-foreground))',
+              family: 'Arial, sans-serif',
+            },
+          },
+          {
+            text: formatTotal(animatedTotal),
+            x: 0.5,
+            y: 0.45,
+            xref: 'paper',
+            yref: 'paper',
+            showarrow: false,
+            font: {
+              size: 24,
+              color: 'hsl(var(--foreground))',
+              family: 'Arial, sans-serif',
+            },
+          },
+        ],
+        showlegend: true,
+        legend: {
+          orientation: 'h',
+          yanchor: 'bottom',
+          y: -0.15,
+          xanchor: 'center',
+          x: 0.5,
+          font: {
+            color: 'hsl(var(--foreground))',
+            size: 12,
+            family: 'Arial, sans-serif',
+          },
+          itemclick: false,
+          itemdoubleclick: false,
+          traceorder: 'normal',
+          itemsizing: 'constant',
+          itemwidth: 30,
+          bgcolor: 'transparent',
+          bordercolor: 'hsl(var(--border))',
+          borderwidth: 0,
+        },
+        paper_bgcolor: 'transparent',
+        plot_bgcolor: 'transparent',
+        font: {
+          color: 'hsl(var(--foreground))',
+          family: 'Arial, sans-serif',
+        },
+        margin: { l: 20, r: 20, t: 20, b: 80 },
+        hoverlabel: {
+          bgcolor: 'rgba(0, 0, 0, 0.85)',
+          bordercolor: 'rgba(255, 255, 255, 0.3)',
+          font: {
+            color: '#ffffff',
+            size: 13,
+            family: 'Arial, sans-serif',
+          },
+          namelength: -1,
+        },
+        autosize: true,
+      },
+      config: {
+        displayModeBar: true,
+        responsive: true,
+        displaylogo: false,
+        modeBarButtonsToRemove: ['pan2d', 'lasso2d'],
+      },
+    };
+  }, [chartData, total, animationProgress]);
+
+  // Early returns after all hooks
+  if (loading) {
+    return (
+      <div className="chart-card h-[450px] animate-slide-up" style={{ animationDelay: "400ms" }}>
+        <div className="flex items-center justify-center h-full">
+          <div className="text-muted-foreground">Loading chart data...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!chartData || chartData.length === 0) {
+    return (
+      <div className="chart-card h-[450px] animate-slide-up" style={{ animationDelay: "400ms" }}>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-foreground">Overall Sales</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Sales distribution breakdown</p>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center justify-center h-[320px]">
+          <div className="text-muted-foreground">No data available</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="chart-card h-[420px] animate-slide-up" style={{ animationDelay: "400ms" }}>
-      <div className="flex items-center justify-between mb-6">
+    <div className="chart-card h-[450px] animate-slide-up" style={{ animationDelay: "400ms" }}>
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
             <TrendingUp className="w-5 h-5 text-primary" />
@@ -150,97 +340,47 @@ export const OverallSalesPieChart = ({ siteId, month, months, year, years }) => 
             <p className="text-xs text-muted-foreground mt-0.5">Sales distribution breakdown</p>
           </div>
         </div>
-        <div className="text-sm font-semibold text-foreground">
-          Total: £{total.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        <div className="text-sm font-semibold text-foreground bg-card/50 px-3 py-1.5 rounded-lg border border-border/50">
+          Total: {formatCurrency(total)}
         </div>
       </div>
       
-      <div className="h-[280px] relative flex items-center justify-center">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={chartData}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              label={false}
-              innerRadius={70}
-              outerRadius={120}
-              paddingAngle={hasMultipleSegments ? 3 : 0}
-              fill="#8884d8"
-              dataKey="value"
-              stroke="hsl(var(--card))"
-              strokeWidth={3}
-              startAngle={90}
-              endAngle={-270}
-            >
-              {chartData.map((entry, index) => (
-                <Cell 
-                  key={`cell-${index}`} 
-                  fill={entry.color}
-                  style={{
-                    filter: 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.15))',
-                    transition: 'all 0.3s ease',
-                    cursor: 'pointer',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.filter = 'drop-shadow(0 6px 12px rgba(0, 0, 0, 0.25)) brightness(1.1)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.filter = 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.15))';
-                  }}
-                />
-              ))}
-            </Pie>
-            {/* Center label showing total - improved styling */}
-            <text
-              x="50%"
-              y="45%"
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fill="hsl(var(--foreground))"
-              fontSize={14}
-              fontWeight={600}
-              style={{
-                opacity: 0.9,
+      <div className="h-[320px] relative flex items-center justify-center" ref={chartRef}>
+        {plotlyData ? (
+          <div className="w-full h-full">
+            <Plot
+              data={plotlyData.data}
+              layout={plotlyData.layout}
+              config={plotlyData.config}
+              style={{ width: '100%', height: '100%' }}
+              useResizeHandler={true}
+              onInitialized={(figure, graphDiv) => {
+                // Add text shadow to pie chart text for better visibility
+                if (graphDiv) {
+                  const pieTextElements = graphDiv.querySelectorAll('.pie text');
+                  pieTextElements.forEach((textEl) => {
+                    textEl.style.textShadow = '2px 2px 4px rgba(0, 0, 0, 0.9), -2px -2px 4px rgba(0, 0, 0, 0.9), 2px -2px 4px rgba(0, 0, 0, 0.9), -2px 2px 4px rgba(0, 0, 0, 0.9)';
+                    textEl.style.fontWeight = 'bold';
+                    textEl.style.fontSize = '13px';
+                  });
+                }
               }}
-            >
-              Total Sales
-            </text>
-            <text
-              x="50%"
-              y="55%"
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fill="hsl(var(--foreground))"
-              fontSize={20}
-              fontWeight={700}
-              style={{
-                letterSpacing: '-0.02em',
-              }}
-            >
-              {formatTotal(total)}
-            </text>
-            <Tooltip content={<CustomTooltip />} />
-            <Legend
-              verticalAlign="bottom"
-              height={50}
-              wrapperStyle={{ paddingTop: "15px" }}
-              iconType="circle"
-              iconSize={10}
-              formatter={(value, entry) => {
-                const item = chartData.find(d => d.name === value);
-                const percentage = item ? ((item.value / total) * 100).toFixed(1) : '0.0';
-                return (
-                  <span className="text-sm font-medium text-foreground">
-                    <span style={{ color: entry.color, fontWeight: 600 }}>{value}</span>
-                    <span className="ml-2 text-muted-foreground">({percentage}%)</span>
-                  </span>
-                );
+              onUpdate={(figure, graphDiv) => {
+                // Reapply text shadow on updates
+                if (graphDiv) {
+                  const pieTextElements = graphDiv.querySelectorAll('.pie text');
+                  pieTextElements.forEach((textEl) => {
+                    textEl.style.textShadow = '2px 2px 4px rgba(0, 0, 0, 0.9), -2px -2px 4px rgba(0, 0, 0, 0.9), 2px -2px 4px rgba(0, 0, 0, 0.9), -2px 2px 4px rgba(0, 0, 0, 0.9)';
+                    textEl.style.fontWeight = 'bold';
+                    textEl.style.fontSize = '13px';
+                  });
+                }
               }}
             />
-          </PieChart>
-        </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="text-muted-foreground">No data available</div>
+        )}
       </div>
     </div>
   );

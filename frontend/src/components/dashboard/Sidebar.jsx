@@ -100,17 +100,17 @@ export const Sidebar = ({ isOpen, onToggle }) => {
           />
 
           <NavItem
-            icon={<GitCompare className="w-5 h-5" />}
-            label="Comparison"
-            path="/comparison"
-            active={currentPath === "/comparison"}
-          />
-
-          <NavItem
             icon={<BarChart3 className="w-5 h-5" />}
             label="Metrics Comparison"
             path="/metrics-comparison"
             active={currentPath === "/metrics-comparison"}
+          />
+
+          <NavItem
+            icon={<GitCompare className="w-5 h-5" />}
+            label="Comparison"
+            path="/comparison"
+            active={currentPath === "/comparison"}
           />
         </nav>
 
