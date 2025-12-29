@@ -139,17 +139,43 @@ export const SiteComparison = () => {
   const [sites, setSites] = useState([]);
   const [loadingSites, setLoadingSites] = useState(true);
   
-  // Pending filter states (what user selects)
-  const [pendingSite1, setPendingSite1] = useState(null);
-  const [pendingSite2, setPendingSite2] = useState(null);
-  const [pendingMonths, setPendingMonths] = useState(["november"]);
-  const [pendingYears, setPendingYears] = useState(["2025"]);
+  // Load saved comparison filters from sessionStorage
+  const loadSavedComparisonFilters = () => {
+    try {
+      const saved = sessionStorage.getItem('comparisonFilters');
+      if (saved) {
+        const filters = JSON.parse(saved);
+        return {
+          site1: filters.site1 || null,
+          site2: filters.site2 || null,
+          months: filters.months || ["november"],
+          years: filters.years || ["2025"]
+        };
+      }
+    } catch (error) {
+      console.error('Error loading saved comparison filters:', error);
+    }
+    return {
+      site1: null,
+      site2: null,
+      months: ["november"],
+      years: ["2025"]
+    };
+  };
+
+  const savedComparisonFilters = loadSavedComparisonFilters();
   
-  // Applied filter states (what's actually used for data fetching)
-  const [appliedSite1, setAppliedSite1] = useState(null);
-  const [appliedSite2, setAppliedSite2] = useState(null);
-  const [appliedMonths, setAppliedMonths] = useState(["november"]);
-  const [appliedYears, setAppliedYears] = useState(["2025"]);
+  // Pending filter states (what user selects) - initialize from saved filters
+  const [pendingSite1, setPendingSite1] = useState(savedComparisonFilters.site1);
+  const [pendingSite2, setPendingSite2] = useState(savedComparisonFilters.site2);
+  const [pendingMonths, setPendingMonths] = useState(savedComparisonFilters.months);
+  const [pendingYears, setPendingYears] = useState(savedComparisonFilters.years);
+  
+  // Applied filter states (what's actually used for data fetching) - initialize from saved filters
+  const [appliedSite1, setAppliedSite1] = useState(savedComparisonFilters.site1);
+  const [appliedSite2, setAppliedSite2] = useState(savedComparisonFilters.site2);
+  const [appliedMonths, setAppliedMonths] = useState(savedComparisonFilters.months);
+  const [appliedYears, setAppliedYears] = useState(savedComparisonFilters.years);
   
   // Initialize applied filters on mount (optional - can start with no filters)
   // This allows users to set filters before applying
@@ -224,6 +250,18 @@ export const SiteComparison = () => {
     setAppliedSite2(pendingSite2);
     setAppliedMonths(pendingMonths);
     setAppliedYears(pendingYears);
+    
+    // Save filters to sessionStorage
+    try {
+      sessionStorage.setItem('comparisonFilters', JSON.stringify({
+        site1: pendingSite1,
+        site2: pendingSite2,
+        months: pendingMonths,
+        years: pendingYears
+      }));
+    } catch (error) {
+      console.error('Error saving comparison filters:', error);
+    }
   };
 
   const handleClear = () => {
@@ -237,6 +275,13 @@ export const SiteComparison = () => {
     setAppliedYears(["2025"]);
     setSite1Data(null);
     setSite2Data(null);
+    
+    // Clear saved filters from sessionStorage
+    try {
+      sessionStorage.removeItem('comparisonFilters');
+    } catch (error) {
+      console.error('Error clearing comparison filters:', error);
+    }
   };
 
   const hasPendingChanges = 

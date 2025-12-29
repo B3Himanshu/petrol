@@ -1,8 +1,7 @@
 import {
   LayoutDashboard,
   GitCompare,
-  Settings,
-  HelpCircle,
+  BarChart3,
   LogOut,
   Fuel,
   Menu,
@@ -106,19 +105,14 @@ export const Sidebar = ({ isOpen, onToggle }) => {
             path="/comparison"
             active={currentPath === "/comparison"}
           />
-        </nav>
 
-        {/* Preference Section - Fixed at bottom */}
-        <div className="flex-shrink-0 px-4 py-4 border-t border-sidebar-muted/20">
-          <p className="px-4 py-2 text-xs font-semibold text-sidebar-muted uppercase tracking-wider">
-            Preference
-          </p>
           <NavItem
-            icon={<Settings className="w-5 h-5" />}
-            label="Settings"
+            icon={<BarChart3 className="w-5 h-5" />}
+            label="Metrics Comparison"
+            path="/metrics-comparison"
+            active={currentPath === "/metrics-comparison"}
           />
-          <NavItem icon={<HelpCircle className="w-5 h-5" />} label="Help" />
-        </div>
+        </nav>
 
         {/* Logout - Fixed at bottom */}
         <div className="flex-shrink-0 p-4 border-t border-sidebar-muted/20">

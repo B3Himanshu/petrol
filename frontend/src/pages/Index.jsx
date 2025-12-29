@@ -30,11 +30,15 @@ import { CityMap } from "@/components/dashboard/CityMap";
 import { dashboardAPI } from "@/services/api";
 
 const Index = () => {
-  // Loading state for Spline animation - starts true on page load
-  const [isLoading, setIsLoading] = useState(true);
-  const [dashboardVisible, setDashboardVisible] = useState(false);
+  // Check if this is the initial app load (first time in this session)
+  // Only show animation on initial load, not when navigating between pages
+  const isInitialLoad = !sessionStorage.getItem('appInitialized');
+  
+  // Loading state for Spline animation - only true on initial load
+  const [isLoading, setIsLoading] = useState(isInitialLoad);
+  const [dashboardVisible, setDashboardVisible] = useState(!isInitialLoad);
   // Track if loading has already completed to prevent re-triggering
-  const loadingCompletedRef = useRef(false);
+  const loadingCompletedRef = useRef(!isInitialLoad);
 
   // Initialize sidebar state based on screen size
   const [sidebarOpen, setSidebarOpen] = useState(() => {
@@ -44,13 +48,43 @@ const Index = () => {
     return true;
   });
 
-  // Filter and landing state
-  const [filtersApplied, setFiltersApplied] = useState(false);
-  const [selectedMonth, setSelectedMonth] = useState(11); // November (default based on database data)
-  const [selectedYear, setSelectedYear] = useState(2025); // 2025 (default based on database data)
-  const [selectedMonths, setSelectedMonths] = useState([11]); // Array for multi-select
-  const [selectedYears, setSelectedYears] = useState([2025]); // Array for multi-select
-  const [selectedSite, setSelectedSite] = useState(null);
+  // Load saved filters from sessionStorage on mount
+  const loadSavedFilters = () => {
+    try {
+      const saved = sessionStorage.getItem('dashboardFilters');
+      if (saved) {
+        const filters = JSON.parse(saved);
+        return {
+          site: filters.site || null,
+          months: filters.months || [11],
+          years: filters.years || [2025],
+          month: filters.month || 11,
+          year: filters.year || 2025,
+          applied: filters.applied || false
+        };
+      }
+    } catch (error) {
+      console.error('Error loading saved filters:', error);
+    }
+    return {
+      site: null,
+      months: [11],
+      years: [2025],
+      month: 11,
+      year: 2025,
+      applied: false
+    };
+  };
+
+  const savedFilters = loadSavedFilters();
+  
+  // Filter and landing state - initialize from saved filters
+  const [filtersApplied, setFiltersApplied] = useState(savedFilters.applied);
+  const [selectedMonth, setSelectedMonth] = useState(savedFilters.month);
+  const [selectedYear, setSelectedYear] = useState(savedFilters.year);
+  const [selectedMonths, setSelectedMonths] = useState(savedFilters.months);
+  const [selectedYears, setSelectedYears] = useState(savedFilters.years);
+  const [selectedSite, setSelectedSite] = useState(savedFilters.site);
   const pendingSiteIdRef = useRef(null);
 
   // Dashboard data state
@@ -85,6 +119,9 @@ const Index = () => {
   const handleLoadingComplete = useCallback(() => {
     // Only proceed if loading hasn't already completed
     if (loadingCompletedRef.current) return;
+    
+    // Mark app as initialized in session storage
+    sessionStorage.setItem('appInitialized', 'true');
     
     // Ensure DOM is ready before showing dashboard
     const showDashboard = () => {
@@ -139,17 +176,34 @@ const Index = () => {
     setSelectedSite(siteId);
     
     // Set months and years if provided (use first month/year for single selection compatibility)
-    if (months && months.length > 0) {
-      setSelectedMonth(months[0]); // For backward compatibility, use first month
+    const finalMonths = months && months.length > 0 ? months : selectedMonths;
+    const finalYears = years && years.length > 0 ? years : selectedYears;
+    
+    if (finalMonths && finalMonths.length > 0) {
+      setSelectedMonth(finalMonths[0]); // For backward compatibility, use first month
       // Store all months for multi-select support
-      setSelectedMonths(months);
+      setSelectedMonths(finalMonths);
     }
-    if (years && years.length > 0) {
-      setSelectedYear(years[0]); // For backward compatibility, use first year
+    if (finalYears && finalYears.length > 0) {
+      setSelectedYear(finalYears[0]); // For backward compatibility, use first year
       // Store all years for multi-select support
-      setSelectedYears(years);
+      setSelectedYears(finalYears);
     }
-  }, []);
+    
+    // Save filters to sessionStorage
+    try {
+      sessionStorage.setItem('dashboardFilters', JSON.stringify({
+        site: siteId,
+        months: finalMonths,
+        years: finalYears,
+        month: finalMonths[0],
+        year: finalYears[0],
+        applied: true
+      }));
+    } catch (error) {
+      console.error('Error saving filters:', error);
+    }
+  }, [selectedMonths, selectedYears]);
   
   // Effect to set filtersApplied after selectedSite is confirmed
   useEffect(() => {
@@ -158,6 +212,19 @@ const Index = () => {
       pendingSiteIdRef.current = null;
     }
   }, [selectedSite]);
+
+  // Restore saved filters on mount if they exist
+  useEffect(() => {
+    if (savedFilters.applied && savedFilters.site) {
+      // Auto-apply saved filters
+      setSelectedSite(savedFilters.site);
+      setSelectedMonths(savedFilters.months);
+      setSelectedYears(savedFilters.years);
+      setSelectedMonth(savedFilters.month);
+      setSelectedYear(savedFilters.year);
+      setFiltersApplied(true);
+    }
+  }, []); // Only run on mount
 
   // Fetch dashboard metrics when site is selected
   useEffect(() => {

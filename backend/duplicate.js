@@ -27,6 +27,7 @@ async function exportToExcel() {
     
     const workbook = XLSX.utils.book_new();
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     
     // Step 0: Discover all tables in the database
     console.log('📋 Step 0: Discovering all tables in database...');
@@ -54,16 +55,24 @@ async function exportToExcel() {
     });
     console.log('');
     
-    // 1. Export Sites Data
+    // 1. Export Sites Data - Get ALL columns dynamically
     console.log('📋 Step 1: Exporting Sites data...');
+    
+    // First, get all columns from sites table
+    const sitesColumnsQuery = `
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'sites'
+      ORDER BY ordinal_position;
+    `;
+    const sitesColumnsResult = await client.query(sitesColumnsQuery);
+    const allSitesColumns = sitesColumnsResult.rows.map(r => r.column_name);
+    console.log(`   📋 Found ${allSitesColumns.length} columns in sites table: ${allSitesColumns.join(', ')}`);
+    
+    // Build dynamic SELECT query with all columns
+    const sitesColumnsStr = allSitesColumns.join(', ');
     const sitesQuery = `
-      SELECT 
-        site_code,
-        site_name,
-        post_code,
-        company,
-        is_active,
-        is_bunkered
+      SELECT ${sitesColumnsStr}
       FROM sites
       WHERE is_active = true
         AND site_code > 1
@@ -76,48 +85,55 @@ async function exportToExcel() {
     const sitesResult = await client.query(sitesQuery);
     console.log(`   ✅ Found ${sitesResult.rows.length} sites`);
     
-    // Map sites and add city information
+    // Map sites and add city information, preserving ALL columns
     const sitesData = sitesResult.rows.map(row => {
       const mapped = mapSiteToFrontend(row);
-      return {
-        'Site Code': row.site_code,
-        'Site Name': row.site_name,
-        'Post Code': row.post_code,
-        'City': mapped.cityDisplay,
-        'Company': row.company || '',
-        'Is Active': row.is_active ? 'Yes' : 'No',
-        'Is Bunkered': row.is_bunkered ? 'Yes' : 'No'
-      };
+      const formattedRow = {};
+      
+      // Add all original columns with proper formatting
+      allSitesColumns.forEach(col => {
+        const value = row[col];
+        if (value === null || value === undefined) {
+          formattedRow[col] = '';
+        } else if (value instanceof Date) {
+          formattedRow[col] = value.toISOString().split('T')[0];
+        } else if (typeof value === 'boolean') {
+          formattedRow[col] = value ? 'Yes' : 'No';
+        } else {
+          formattedRow[col] = value;
+        }
+      });
+      
+      // Add city information
+      formattedRow['City'] = mapped.cityDisplay;
+      
+      return formattedRow;
     });
     
     const sitesSheet = XLSX.utils.json_to_sheet(sitesData);
     XLSX.utils.book_append_sheet(workbook, sitesSheet, 'Sites');
-    console.log('   ✅ Sites sheet created\n');
+    console.log('   ✅ Sites sheet created with all columns\n');
     
-    // 2. Export Monthly Summary Data
+    // 2. Export Monthly Summary Data - Get ALL columns dynamically
     console.log('📋 Step 2: Exporting Monthly Summary data...');
+    
+    // Get all columns from monthly_summary table
+    const monthlyColumnsQuery = `
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'monthly_summary'
+      ORDER BY ordinal_position;
+    `;
+    const monthlyColumnsResult = await client.query(monthlyColumnsQuery);
+    const allMonthlyColumns = monthlyColumnsResult.rows.map(r => r.column_name);
+    console.log(`   📋 Found ${allMonthlyColumns.length} columns in monthly_summary table: ${allMonthlyColumns.join(', ')}`);
+    
+    // Build dynamic SELECT query with all columns
+    const monthlyColumnsStr = allMonthlyColumns.map(col => `ms.${col}`).join(', ');
     const monthlySummaryQuery = `
       SELECT 
-        ms.site_code,
-        s.site_name,
-        ms.month,
-        ms.year,
-        ms.bunkered_volume,
-        ms.bunkered_sales,
-        ms.bunkered_purchases,
-        ms.non_bunkered_volume,
-        ms.non_bunkered_sales,
-        ms.non_bunkered_purchases,
-        ms.shop_sales,
-        ms.shop_purchases,
-        ms.valet_sales,
-        ms.valet_purchases,
-        ms.overheads,
-        ms.labour_cost,
-        (ms.bunkered_sales + ms.non_bunkered_sales) as total_fuel_sales,
-        (ms.bunkered_sales + ms.non_bunkered_sales) - (ms.bunkered_purchases + ms.non_bunkered_purchases) as fuel_profit,
-        (ms.shop_sales - ms.shop_purchases) as shop_profit,
-        (ms.valet_sales - ms.valet_purchases) as valet_profit
+        ${monthlyColumnsStr},
+        s.site_name
       FROM monthly_summary ms
       LEFT JOIN sites s ON ms.site_code = s.site_code
       ORDER BY ms.site_code, ms.year, ms.month;
@@ -125,47 +141,73 @@ async function exportToExcel() {
     const monthlyResult = await client.query(monthlySummaryQuery);
     console.log(`   ✅ Found ${monthlyResult.rows.length} monthly records`);
     
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const monthlyData = monthlyResult.rows.map(row => ({
-      'Site Code': row.site_code,
-      'Site Name': row.site_name || '',
-      'Month Number': row.month,
-      'Month Name': monthNames[row.month - 1] || '',
-      'Year': row.year,
-      'Bunkered Volume': parseFloat(row.bunkered_volume || 0),
-      'Bunkered Sales': parseFloat(row.bunkered_sales || 0),
-      'Bunkered Purchases': parseFloat(row.bunkered_purchases || 0),
-      'Non-Bunkered Volume': parseFloat(row.non_bunkered_volume || 0),
-      'Non-Bunkered Sales': parseFloat(row.non_bunkered_sales || 0),
-      'Non-Bunkered Purchases': parseFloat(row.non_bunkered_purchases || 0),
-      'Shop Sales': parseFloat(row.shop_sales || 0),
-      'Shop Purchases': parseFloat(row.shop_purchases || 0),
-      'Valet Sales': parseFloat(row.valet_sales || 0),
-      'Valet Purchases': parseFloat(row.valet_purchases || 0),
-      'Overheads': parseFloat(row.overheads || 0),
-      'Labour Cost': parseFloat(row.labour_cost || 0),
-      'Total Fuel Sales': parseFloat(row.total_fuel_sales || 0),
-      'Fuel Profit': parseFloat(row.fuel_profit || 0),
-      'Shop Profit': parseFloat(row.shop_profit || 0),
-      'Valet Profit': parseFloat(row.valet_profit || 0)
-    }));
+    const monthlyData = monthlyResult.rows.map(row => {
+      const formattedRow = {};
+      
+      // Add all original columns with proper formatting
+      allMonthlyColumns.forEach(col => {
+        const value = row[col];
+        if (value === null || value === undefined) {
+          formattedRow[col] = '';
+        } else if (value instanceof Date) {
+          formattedRow[col] = value.toISOString().split('T')[0];
+        } else if (typeof value === 'number') {
+          formattedRow[col] = parseFloat(value || 0);
+        } else {
+          formattedRow[col] = value;
+        }
+      });
+      
+      // Add site name
+      formattedRow['site_name'] = row.site_name || '';
+      
+      // Add calculated fields
+      const bunkeredSales = parseFloat(row.bunkered_sales || 0);
+      const nonBunkeredSales = parseFloat(row.non_bunkered_sales || 0);
+      const bunkeredPurchases = parseFloat(row.bunkered_purchases || 0);
+      const nonBunkeredPurchases = parseFloat(row.non_bunkered_purchases || 0);
+      const shopSales = parseFloat(row.shop_sales || 0);
+      const shopPurchases = parseFloat(row.shop_purchases || 0);
+      const valetSales = parseFloat(row.valet_sales || 0);
+      const valetPurchases = parseFloat(row.valet_purchases || 0);
+      
+      formattedRow['total_fuel_sales'] = bunkeredSales + nonBunkeredSales;
+      formattedRow['fuel_profit'] = (bunkeredSales + nonBunkeredSales) - (bunkeredPurchases + nonBunkeredPurchases);
+      formattedRow['shop_profit'] = shopSales - shopPurchases;
+      formattedRow['valet_profit'] = valetSales - valetPurchases;
+      
+      // Add month name if month column exists
+      if (row.month) {
+        formattedRow['month_name'] = monthNames[row.month - 1] || '';
+      }
+      
+      return formattedRow;
+    });
     
     const monthlySheet = XLSX.utils.json_to_sheet(monthlyData);
     XLSX.utils.book_append_sheet(workbook, monthlySheet, 'Monthly Summary');
-    console.log('   ✅ Monthly Summary sheet created\n');
+    console.log('   ✅ Monthly Summary sheet created with all columns\n');
     
-    // 3. Export Fuel Margin Data
+    // 3. Export Fuel Margin Data - Get ALL columns dynamically
     console.log('📋 Step 3: Exporting Fuel Margin data...');
+    
+    // Get all columns from fuel_margin_data table
+    const fuelMarginColumnsQuery = `
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'fuel_margin_data'
+      ORDER BY ordinal_position;
+    `;
+    const fuelMarginColumnsResult = await client.query(fuelMarginColumnsQuery);
+    const allFuelMarginColumns = fuelMarginColumnsResult.rows.map(r => r.column_name);
+    console.log(`   📋 Found ${allFuelMarginColumns.length} columns in fuel_margin_data table: ${allFuelMarginColumns.join(', ')}`);
+    
+    // Build dynamic SELECT query with all columns
+    const fuelMarginColumnsStr = allFuelMarginColumns.map(col => `fmd.${col}`).join(', ');
     const fuelMarginQuery = `
       SELECT 
-        fmd.site_code,
-        s.site_name,
-        fmd.month,
-        fmd.year,
-        fmd.ppl,
-        fmd.fuel_profit,
-        fmd.net_sales,
-        fmd.sale_volume
+        ${fuelMarginColumnsStr},
+        s.site_name
       FROM fuel_margin_data fmd
       LEFT JOIN sites s ON fmd.site_code = s.site_code
       ORDER BY fmd.site_code, fmd.year, fmd.month;
@@ -173,96 +215,167 @@ async function exportToExcel() {
     const fuelMarginResult = await client.query(fuelMarginQuery);
     console.log(`   ✅ Found ${fuelMarginResult.rows.length} fuel margin records`);
     
-    const fuelMarginData = fuelMarginResult.rows.map(row => ({
-      'Site Code': row.site_code,
-      'Site Name': row.site_name || '',
-      'Month Number': row.month,
-      'Month Name': monthNames[row.month - 1] || '',
-      'Year': row.year,
-      'PPL (Price Per Liter)': parseFloat(row.ppl || 0),
-      'Fuel Profit': parseFloat(row.fuel_profit || 0),
-      'Net Sales': parseFloat(row.net_sales || 0),
-      'Sale Volume': parseFloat(row.sale_volume || 0)
-    }));
+    const fuelMarginData = fuelMarginResult.rows.map(row => {
+      const formattedRow = {};
+      
+      // Add all original columns with proper formatting
+      allFuelMarginColumns.forEach(col => {
+        const value = row[col];
+        if (value === null || value === undefined) {
+          formattedRow[col] = '';
+        } else if (value instanceof Date) {
+          formattedRow[col] = value.toISOString().split('T')[0];
+        } else if (typeof value === 'number') {
+          formattedRow[col] = parseFloat(value || 0);
+        } else {
+          formattedRow[col] = value;
+        }
+      });
+      
+      // Add site name
+      formattedRow['site_name'] = row.site_name || '';
+      
+      // Add month name if month column exists
+      if (row.month) {
+        formattedRow['month_name'] = monthNames[row.month - 1] || '';
+      }
+      
+      return formattedRow;
+    });
     
     const fuelMarginSheet = XLSX.utils.json_to_sheet(fuelMarginData);
     XLSX.utils.book_append_sheet(workbook, fuelMarginSheet, 'Fuel Margin');
-    console.log('   ✅ Fuel Margin sheet created\n');
+    console.log('   ✅ Fuel Margin sheet created with all columns\n');
     
-    // 4. Try to export Transactions data (if table exists)
+    // 4. Try to export Transactions data (if table exists) - Get ALL columns dynamically
     console.log('📋 Step 4: Checking for Transactions data...');
     try {
+      // Get all columns from transactions table
+      const transactionsColumnsQuery = `
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'transactions'
+        ORDER BY ordinal_position;
+      `;
+      const transactionsColumnsResult = await client.query(transactionsColumnsQuery);
+      const allTransactionsColumns = transactionsColumnsResult.rows.map(r => r.column_name);
+      console.log(`   📋 Found ${allTransactionsColumns.length} columns in transactions table: ${allTransactionsColumns.join(', ')}`);
+      
+      // Build dynamic SELECT query with all columns
+      // Note: transactions table already has site_name column, so we don't need to join
+      // Removing ORDER BY and JOIN for better performance on large tables
+      const transactionsColumnsStr = allTransactionsColumns.map(col => `t.${col}`).join(', ');
+      console.log(`   ⏳ Executing query for transactions (this may take a moment for large datasets)...`);
       const transactionsQuery = `
-        SELECT 
-          t.site_code,
-          s.site_name,
-          t.transaction_date,
-          t.category,
-          t.amount,
-          t.deleted_flag
+        SELECT ${transactionsColumnsStr}
         FROM transactions t
-        LEFT JOIN sites s ON t.site_code = s.site_code
-        WHERE t.deleted_flag = 0
-        ORDER BY t.site_code, t.transaction_date
-        LIMIT 10000;
+        WHERE t.deleted_flag = 0 OR t.deleted_flag IS NULL
+        LIMIT 100000;
       `;
       const transactionsResult = await client.query(transactionsQuery);
       console.log(`   ✅ Found ${transactionsResult.rows.length} transaction records`);
       
       if (transactionsResult.rows.length > 0) {
-        const transactionsData = transactionsResult.rows.map(row => ({
-          'Site Code': row.site_code,
-          'Site Name': row.site_name || '',
-          'Transaction Date': row.transaction_date ? new Date(row.transaction_date).toISOString().split('T')[0] : '',
-          'Category': row.category || '',
-          'Amount': parseFloat(row.amount || 0),
-          'Deleted': row.deleted_flag ? 'Yes' : 'No'
-        }));
+        console.log(`   ⏳ Formatting ${transactionsResult.rows.length} transaction records...`);
+        const transactionsData = transactionsResult.rows.map((row, index) => {
+          // Show progress every 10000 records
+          if (index > 0 && index % 10000 === 0) {
+            console.log(`      Processed ${index} of ${transactionsResult.rows.length} records...`);
+          }
+          
+          const formattedRow = {};
+          
+          // Add all original columns with proper formatting
+          allTransactionsColumns.forEach(col => {
+            const value = row[col];
+            if (value === null || value === undefined) {
+              formattedRow[col] = '';
+            } else if (value instanceof Date) {
+              formattedRow[col] = value.toISOString().split('T')[0];
+            } else if (typeof value === 'boolean') {
+              formattedRow[col] = value ? 'Yes' : 'No';
+            } else if (typeof value === 'number') {
+              formattedRow[col] = parseFloat(value || 0);
+            } else {
+              formattedRow[col] = value;
+            }
+          });
+          
+          return formattedRow;
+        });
         
+        console.log(`   ⏳ Creating Excel sheet for transactions...`);
         const transactionsSheet = XLSX.utils.json_to_sheet(transactionsData);
         XLSX.utils.book_append_sheet(workbook, transactionsSheet, 'Transactions');
-        console.log('   ✅ Transactions sheet created\n');
+        console.log('   ✅ Transactions sheet created with all columns\n');
       }
     } catch (err) {
       console.log(`   ⚠️  Transactions table not found or error: ${err.message}\n`);
     }
     
-    // 5. Try to export Daily Summary data (if table exists)
+    // 5. Try to export Daily Summary data (if table exists) - Get ALL columns dynamically
     console.log('📋 Step 5: Checking for Daily Summary data...');
     try {
+      // Get all columns from daily_summary table
+      const dailySummaryColumnsQuery = `
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'daily_summary'
+        ORDER BY ordinal_position;
+      `;
+      const dailySummaryColumnsResult = await client.query(dailySummaryColumnsQuery);
+      const allDailySummaryColumns = dailySummaryColumnsResult.rows.map(r => r.column_name);
+      console.log(`   📋 Found ${allDailySummaryColumns.length} columns in daily_summary table: ${allDailySummaryColumns.join(', ')}`);
+      
+      // Build dynamic SELECT query with all columns
+      // Removing ORDER BY and JOIN for better performance on large tables
+      const dailySummaryColumnsStr = allDailySummaryColumns.map(col => `ds.${col}`).join(', ');
+      console.log(`   ⏳ Executing query for daily_summary (this may take a moment for large datasets)...`);
       const dailySummaryQuery = `
-        SELECT 
-          ds.site_code,
-          s.site_name,
-          ds.date,
-          ds.sales,
-          ds.volume
+        SELECT ${dailySummaryColumnsStr}
         FROM daily_summary ds
-        LEFT JOIN sites s ON ds.site_code = s.site_code
-        ORDER BY ds.site_code, ds.date
-        LIMIT 50000;
+        LIMIT 100000;
       `;
       const dailySummaryResult = await client.query(dailySummaryQuery);
       console.log(`   ✅ Found ${dailySummaryResult.rows.length} daily summary records`);
       
       if (dailySummaryResult.rows.length > 0) {
-        const dailySummaryData = dailySummaryResult.rows.map(row => ({
-          'Site Code': row.site_code,
-          'Site Name': row.site_name || '',
-          'Date': row.date ? new Date(row.date).toISOString().split('T')[0] : '',
-          'Sales': parseFloat(row.sales || 0),
-          'Volume': parseFloat(row.volume || 0)
-        }));
+        console.log(`   ⏳ Formatting ${dailySummaryResult.rows.length} daily summary records...`);
+        const dailySummaryData = dailySummaryResult.rows.map((row, index) => {
+          // Show progress every 5000 records
+          if (index > 0 && index % 5000 === 0) {
+            console.log(`      Processed ${index} of ${dailySummaryResult.rows.length} records...`);
+          }
+          
+          const formattedRow = {};
+          
+          // Add all original columns with proper formatting
+          allDailySummaryColumns.forEach(col => {
+            const value = row[col];
+            if (value === null || value === undefined) {
+              formattedRow[col] = '';
+            } else if (value instanceof Date) {
+              formattedRow[col] = value.toISOString().split('T')[0];
+            } else if (typeof value === 'number') {
+              formattedRow[col] = parseFloat(value || 0);
+            } else {
+              formattedRow[col] = value;
+            }
+          });
+          
+          return formattedRow;
+        });
         
+        console.log(`   ⏳ Creating Excel sheet for daily summary...`);
         const dailySummarySheet = XLSX.utils.json_to_sheet(dailySummaryData);
         XLSX.utils.book_append_sheet(workbook, dailySummarySheet, 'Daily Summary');
-        console.log('   ✅ Daily Summary sheet created\n');
+        console.log('   ✅ Daily Summary sheet created with all columns\n');
       }
     } catch (err) {
       console.log(`   ⚠️  Daily Summary table not found or error: ${err.message}\n`);
     }
     
-    // 6. Export all other tables dynamically
+    // 6. Export all other tables dynamically (including sync_log and any new tables)
     console.log('📋 Step 6: Exporting all other tables...\n');
     const exportedTables = ['sites', 'monthly_summary', 'fuel_margin_data', 'transactions', 'daily_summary'];
     const exportStats = [];
@@ -293,6 +406,7 @@ async function exportToExcel() {
         }
         
         // Get all data from table (with limit for very large tables)
+        // Use parameterized query to safely handle schema.table names
         const dataQuery = `SELECT * FROM ${table.fullName} LIMIT 100000;`;
         const dataResult = await client.query(dataQuery);
         
@@ -307,12 +421,15 @@ async function exportToExcel() {
           const formattedRow = {};
           Object.keys(row).forEach(key => {
             const value = row[key];
-            // Format dates
+            // Format dates and timestamps
             if (value instanceof Date) {
               formattedRow[key] = value.toISOString().split('T')[0];
             } else if (value === null || value === undefined) {
               formattedRow[key] = '';
+            } else if (typeof value === 'boolean') {
+              formattedRow[key] = value ? 'Yes' : 'No';
             } else if (typeof value === 'number') {
+              // Preserve numeric values, but handle bigint properly
               formattedRow[key] = value;
             } else {
               formattedRow[key] = String(value);
@@ -337,10 +454,31 @@ async function exportToExcel() {
     
     // 7. Create Summary Sheet
     console.log('📋 Step 7: Creating Summary sheet...');
+    
+    // Get counts for all tables
+    let transactionsCount = 0;
+    let dailySummaryCount = 0;
+    try {
+      const transactionsCountQuery = await client.query(`
+        SELECT COUNT(*) as count FROM transactions WHERE deleted_flag = 0 OR deleted_flag IS NULL
+      `);
+      transactionsCount = parseInt(transactionsCountQuery.rows[0]?.count || 0);
+    } catch (e) {
+      // Table might not exist
+    }
+    try {
+      const dailySummaryCountQuery = await client.query(`SELECT COUNT(*) as count FROM daily_summary`);
+      dailySummaryCount = parseInt(dailySummaryCountQuery.rows[0]?.count || 0);
+    } catch (e) {
+      // Table might not exist
+    }
+    
     const summaryData = [
       { 'Metric': 'Total Sites', 'Value': sitesData.length },
       { 'Metric': 'Total Monthly Records', 'Value': monthlyData.length },
       { 'Metric': 'Total Fuel Margin Records', 'Value': fuelMarginData.length },
+      { 'Metric': 'Total Transaction Records', 'Value': transactionsCount },
+      { 'Metric': 'Total Daily Summary Records', 'Value': dailySummaryCount },
       { 'Metric': 'Total Tables in Database', 'Value': allTables.length },
       { 'Metric': 'Tables Exported', 'Value': workbook.SheetNames.length - 1 }, // -1 for Summary sheet
       { 'Metric': 'Export Date', 'Value': new Date().toISOString() },
@@ -353,10 +491,14 @@ async function exportToExcel() {
     
     // 8. Create Export Statistics Sheet
     console.log('📋 Step 8: Creating Export Statistics sheet...');
+    
+    // Reuse the counts already calculated in Step 7
     const statsData = [
       { 'Table Name': 'Sites', 'Rows Exported': sitesData.length, 'Status': 'Success' },
       { 'Table Name': 'Monthly Summary', 'Rows Exported': monthlyData.length, 'Status': 'Success' },
       { 'Table Name': 'Fuel Margin', 'Rows Exported': fuelMarginData.length, 'Status': 'Success' },
+      { 'Table Name': 'Transactions', 'Rows Exported': transactionsCount, 'Status': 'Success' },
+      { 'Table Name': 'Daily Summary', 'Rows Exported': dailySummaryCount, 'Status': 'Success' },
       ...exportStats.map(stat => ({
         'Table Name': stat.table,
         'Rows Exported': stat.rows,

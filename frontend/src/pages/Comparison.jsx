@@ -7,9 +7,14 @@ import { sitesAPI, dashboardAPI } from "@/services/api";
 import { GitCompare } from "lucide-react";
 
 const Comparison = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [dashboardVisible, setDashboardVisible] = useState(false);
-  const loadingCompletedRef = { current: false };
+  // Check if this is the initial app load (first time in this session)
+  // Only show animation on initial load, not when navigating between pages
+  const isInitialLoad = !sessionStorage.getItem('appInitialized');
+  
+  // Loading state for Spline animation - only true on initial load
+  const [isLoading, setIsLoading] = useState(isInitialLoad);
+  const [dashboardVisible, setDashboardVisible] = useState(!isInitialLoad);
+  const loadingCompletedRef = { current: !isInitialLoad };
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     if (typeof window !== 'undefined') {
       return window.innerWidth >= 1024;
@@ -33,9 +38,12 @@ const Comparison = () => {
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
-  // Handle loading complete
+  // Handle loading complete - only on initial load
   useEffect(() => {
     if (loadingCompletedRef.current) return;
+    
+    // Mark app as initialized in session storage
+    sessionStorage.setItem('appInitialized', 'true');
     
     const showDashboard = () => {
       requestAnimationFrame(() => {

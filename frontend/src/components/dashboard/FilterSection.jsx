@@ -140,10 +140,44 @@ const MultiSelect = ({ options, selected, onChange, placeholder, label }) => {
 
 // Clean JSX FilterSection (no TypeScript, no BOM)
 const FilterSectionComponent = ({ onApplyFilters, selectedSite, onSiteChange, filtersApplied }) => {
-  // Local state for filter selections - these are only applied when "Apply Filters" is clicked
-  const [localSelectedSite, setLocalSelectedSite] = useState(selectedSite || "all");
-  const [localSelectedMonths, setLocalSelectedMonths] = useState(["november"]);
-  const [localSelectedYears, setLocalSelectedYears] = useState(["2025"]);
+  // Load saved filters from sessionStorage
+  const loadSavedFilters = () => {
+    try {
+      const saved = sessionStorage.getItem('dashboardFilters');
+      if (saved) {
+        const filters = JSON.parse(saved);
+        // Convert month numbers to month names
+        const monthNames = filters.months?.map(num => {
+          const monthMap = {
+            1: 'january', 2: 'february', 3: 'march', 4: 'april',
+            5: 'may', 6: 'june', 7: 'july', 8: 'august',
+            9: 'september', 10: 'october', 11: 'november', 12: 'december'
+          };
+          return monthMap[num] || 'november';
+        }) || ["november"];
+        const years = filters.years?.map(y => String(y)) || ["2025"];
+        return {
+          site: filters.site || "all",
+          months: monthNames,
+          years: years
+        };
+      }
+    } catch (error) {
+      console.error('Error loading saved filters:', error);
+    }
+    return {
+      site: "all",
+      months: ["november"],
+      years: ["2025"]
+    };
+  };
+
+  const savedFilters = loadSavedFilters();
+  
+  // Local state for filter selections - initialize from saved filters
+  const [localSelectedSite, setLocalSelectedSite] = useState(selectedSite || savedFilters.site || "all");
+  const [localSelectedMonths, setLocalSelectedMonths] = useState(savedFilters.months);
+  const [localSelectedYears, setLocalSelectedYears] = useState(savedFilters.years);
   const [sites, setSites] = useState([]);
   const [loadingSites, setLoadingSites] = useState(true);
 

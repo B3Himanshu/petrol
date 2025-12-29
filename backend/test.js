@@ -5,17 +5,20 @@ import { mapSiteToFrontend } from './utils/cityMapping.js';
 dotenv.config();
 
 /**
- * Database Sites and Monthly Data Analysis Script
+ * Database Complete Structure Analysis Script
  * This script checks:
- * 1. All sites from the database (not hardcoded)
- * 2. Which sites have monthly data and for which months/years
+ * 1. All tables in the database
+ * 2. All columns in each table with their data types
+ * 3. Row counts for each table
+ * 4. Sample data from each table
+ * 5. Sites and monthly data analysis
  */
 
-async function analyzeSitesAndMonthlyData() {
+async function analyzeCompleteDatabase() {
   let client;
   
   try {
-    console.log('🔍 Starting Sites and Monthly Data Analysis...\n');
+    console.log('🔍 Starting Complete Database Structure Analysis...\n');
     console.log('📊 Database Connection Info:');
     
     // Parse connection info from DATABASE_URL if present
@@ -45,9 +48,116 @@ async function analyzeSitesAndMonthlyData() {
     // Connect to database
     client = await pool.connect();
     console.log('✅ Connected to database successfully!\n');
+    
+    // Step 0: Discover all tables
+    console.log('═══════════════════════════════════════════════════════════════');
+    console.log('📋 STEP 0: DISCOVERING ALL TABLES');
+    console.log('═══════════════════════════════════════════════════════════════\n');
+    
+    const tablesQuery = `
+      SELECT 
+        table_schema,
+        table_name
+      FROM information_schema.tables
+      WHERE table_schema NOT IN ('pg_catalog', 'information_schema', 'pg_toast')
+        AND table_type = 'BASE TABLE'
+      ORDER BY table_schema, table_name;
+    `;
+    const tablesResult = await client.query(tablesQuery);
+    console.log(`✅ Found ${tablesResult.rows.length} table(s) in database\n`);
+    
+    const allTables = tablesResult.rows.map(row => ({
+      schema: row.table_schema,
+      name: row.table_name,
+      fullName: `${row.table_schema}.${row.table_name}`
+    }));
+    
+    // Step 1: Analyze each table structure
+    console.log('═══════════════════════════════════════════════════════════════');
+    console.log('📋 STEP 1: TABLE STRUCTURE ANALYSIS');
+    console.log('═══════════════════════════════════════════════════════════════\n');
+    
+    const tableStructures = [];
+    
+    for (const table of allTables) {
+      console.log(`📊 Analyzing table: ${table.fullName}`);
+      
+      // Get all columns with details
+      const columnsQuery = `
+        SELECT 
+          column_name,
+          data_type,
+          character_maximum_length,
+          is_nullable,
+          column_default,
+          ordinal_position
+        FROM information_schema.columns
+        WHERE table_schema = $1 AND table_name = $2
+        ORDER BY ordinal_position;
+      `;
+      const columnsResult = await client.query(columnsQuery, [table.schema, table.name]);
+      
+      // Get row count
+      const countQuery = `SELECT COUNT(*) as row_count FROM ${table.fullName};`;
+      const countResult = await client.query(countQuery);
+      const rowCount = parseInt(countResult.rows[0].row_count);
+      
+      const columns = columnsResult.rows.map(col => ({
+        name: col.column_name,
+        type: col.data_type,
+        maxLength: col.character_maximum_length,
+        nullable: col.is_nullable === 'YES',
+        default: col.column_default,
+        position: col.ordinal_position
+      }));
+      
+      tableStructures.push({
+        ...table,
+        columns,
+        rowCount
+      });
+      
+      console.log(`   ✅ Columns: ${columns.length}, Rows: ${rowCount}`);
+      console.log(`   Columns:`);
+      columns.forEach(col => {
+        const typeInfo = col.maxLength ? `${col.type}(${col.maxLength})` : col.type;
+        const nullable = col.nullable ? 'NULL' : 'NOT NULL';
+        console.log(`      - ${col.name}: ${typeInfo} ${nullable}`);
+      });
+      
+      // Get sample data (first 3 rows)
+      if (rowCount > 0) {
+        const sampleQuery = `SELECT * FROM ${table.fullName} LIMIT 3;`;
+        const sampleResult = await client.query(sampleQuery);
+        console.log(`   Sample data (${sampleResult.rows.length} row(s)):`);
+        sampleResult.rows.forEach((row, idx) => {
+          console.log(`      Row ${idx + 1}:`, Object.keys(row).slice(0, 5).map(k => `${k}=${row[k]}`).join(', '), 
+                     Object.keys(row).length > 5 ? '...' : '');
+        });
+      }
+      console.log('');
+    }
+    
+    // Summary of all tables
+    console.log('═══════════════════════════════════════════════════════════════');
+    console.log('📊 TABLE SUMMARY');
+    console.log('═══════════════════════════════════════════════════════════════\n');
+    console.log(`Total Tables: ${tableStructures.length}`);
+    console.log(`Total Rows Across All Tables: ${tableStructures.reduce((sum, t) => sum + t.rowCount, 0)}`);
+    console.log('\nTable Details:');
+    tableStructures.forEach((table, idx) => {
+      console.log(`   ${idx + 1}. ${table.fullName}`);
+      console.log(`      Columns: ${table.columns.length}, Rows: ${table.rowCount}`);
+    });
+    console.log('');
 
+    // Step 2: Sites and Monthly Data Analysis
+    console.log('═══════════════════════════════════════════════════════════════');
+    console.log('📋 STEP 2: SITES AND MONTHLY DATA ANALYSIS');
+    console.log('═══════════════════════════════════════════════════════════════\n');
+    
     // 1. Get all active sites from database (same query as in routes/sites.js)
-    console.log('📋 Step 1: Fetching all active sites from database...');
+    console.log('📋 Step 2.1: Fetching all active sites from database...');
     const sitesQuery = `
       SELECT 
         site_code,
@@ -72,7 +182,7 @@ async function analyzeSitesAndMonthlyData() {
     const mappedSites = sitesResult.rows.map(mapSiteToFrontend);
     
     // 2. Check monthly data for each site
-    console.log('📋 Step 2: Checking monthly data for each site...\n');
+    console.log('📋 Step 2.2: Checking monthly data for each site...\n');
     
     const sitesWithData = [];
     const sitesWithoutData = [];
@@ -131,7 +241,7 @@ async function analyzeSitesAndMonthlyData() {
     // 3. Display results
     console.log('═══════════════════════════════════════════════════════════════');
     console.log('📊 SITES WITH MONTHLY DATA');
-    console.log('═══════════════════════════════════════════════════════════════\n');
+    console.log('═══════════════════════════════════════════════════════════════');
     console.log(`Total: ${sitesWithData.length} sites\n`);
     
     sitesWithData.forEach((site, index) => {
@@ -173,7 +283,7 @@ async function analyzeSitesAndMonthlyData() {
     }
     
     // 4. Summary statistics
-    console.log('═══════════════════════════════════════════════════════════════');
+    console.log('\n═══════════════════════════════════════════════════════════════');
     console.log('📈 SUMMARY STATISTICS');
     console.log('═══════════════════════════════════════════════════════════════\n');
     
@@ -199,7 +309,37 @@ async function analyzeSitesAndMonthlyData() {
       console.log(`   ${year}: ${sitesForYear.length} sites, avg ${avgMonths.toFixed(1)} months per site`);
     });
     
-    console.log('\n✅ Analysis completed successfully!');
+    // Step 3: Check for any new or unexpected columns
+    console.log('\n═══════════════════════════════════════════════════════════════');
+    console.log('📋 STEP 3: CHECKING FOR NEW COLUMNS');
+    console.log('═══════════════════════════════════════════════════════════════\n');
+    
+    const expectedTables = ['sites', 'monthly_summary', 'fuel_margin_data', 'transactions', 'daily_summary'];
+    const newTables = tableStructures.filter(t => !expectedTables.includes(t.name.toLowerCase()));
+    
+    if (newTables.length > 0) {
+      console.log('⚠️  NEW TABLES FOUND (not in expected list):');
+      newTables.forEach(table => {
+        console.log(`   - ${table.fullName} (${table.columns.length} columns, ${table.rowCount} rows)`);
+      });
+    } else {
+      console.log('✅ No new tables found (all tables are expected)');
+    }
+    
+    // Check for columns in known tables
+    console.log('\n📊 Column details for key tables:');
+    const keyTables = ['sites', 'monthly_summary', 'fuel_margin_data', 'transactions', 'daily_summary'];
+    keyTables.forEach(tableName => {
+      const table = tableStructures.find(t => t.name.toLowerCase() === tableName.toLowerCase());
+      if (table) {
+        console.log(`\n   ${table.fullName}:`);
+        table.columns.forEach(col => {
+          console.log(`      - ${col.name} (${col.type}${col.maxLength ? `(${col.maxLength})` : ''})`);
+        });
+      }
+    });
+    
+    console.log('\n✅ Complete database analysis finished successfully!');
 
   } catch (error) {
     console.error('❌ Error exploring database:', error);
@@ -219,5 +359,5 @@ async function analyzeSitesAndMonthlyData() {
 }
 
 // Run the analysis
-analyzeSitesAndMonthlyData();
+analyzeCompleteDatabase();
 
