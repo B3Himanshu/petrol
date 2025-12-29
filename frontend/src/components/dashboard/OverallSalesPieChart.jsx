@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, Label } from "recharts";
-import { cn } from "@/lib/utils";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import { TrendingUp } from "lucide-react";
 import { dashboardAPI } from "@/services/api";
 
 // Custom Tooltip component with theme-aware colors
@@ -8,18 +8,19 @@ const CustomTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
     return (
       <div 
-        className="bg-card border border-border rounded-lg p-3 shadow-lg"
+        className="rounded-lg p-3 shadow-xl min-w-[180px]"
         style={{
-          backgroundColor: "hsl(var(--card))",
-          borderColor: "hsl(var(--border))",
-          color: "hsl(var(--foreground))",
+          backgroundColor: "hsl(222, 47%, 11%)",
+          border: "1px solid hsl(217, 33%, 17%)",
+          color: "#ffffff",
+          zIndex: 99999,
         }}
       >
-        <p className="text-foreground font-medium mb-1">
+        <p className="font-semibold text-sm mb-2" style={{ color: "#ffffff" }}>
           {payload[0].name}
         </p>
-        <p className="text-foreground font-semibold">
-          Sales: £{payload[0].value.toLocaleString()}
+        <p className="text-sm font-medium" style={{ color: "#ffffff" }}>
+          Sales: £{payload[0].value.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </p>
       </div>
     );
@@ -38,29 +39,6 @@ const colorMap = {
 export const OverallSalesPieChart = ({ siteId, month, months, year, years }) => {
   const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [textColor, setTextColor] = useState('#000000'); // Default to black
-
-  // Get the computed foreground color from CSS variables
-  useEffect(() => {
-    const updateTextColor = () => {
-      const root = document.documentElement;
-      const computedColor = getComputedStyle(root).getPropertyValue('--foreground').trim();
-      if (computedColor) {
-        // Convert HSL values to hex or use directly
-        setTextColor(`hsl(${computedColor})`);
-      }
-    };
-    
-    updateTextColor();
-    // Update on theme change
-    const observer = new MutationObserver(updateTextColor);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class']
-    });
-    
-    return () => observer.disconnect();
-  }, []);
 
   useEffect(() => {
     if (!siteId || siteId === 'all') {
@@ -148,19 +126,36 @@ export const OverallSalesPieChart = ({ siteId, month, months, year, years }) => 
 
   // Calculate total for center label
   const total = chartData.reduce((sum, item) => sum + item.value, 0);
+  const hasMultipleSegments = chartData.length > 1;
+
+  // Format total for display
+  const formatTotal = (value) => {
+    if (value >= 1000000) {
+      return `£${(value / 1000000).toFixed(1)}M`;
+    } else if (value >= 1000) {
+      return `£${(value / 1000).toFixed(0)}k`;
+    }
+    return `£${value.toFixed(0)}`;
+  };
 
   return (
     <div className="chart-card h-[420px] animate-slide-up" style={{ animationDelay: "400ms" }}>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-foreground">
-          Overall Sales
-        </h3>
-        <div className="text-xs text-muted-foreground">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+            <TrendingUp className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-foreground">Overall Sales</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">Sales distribution breakdown</p>
+          </div>
+        </div>
+        <div className="text-sm font-semibold text-foreground">
           Total: £{total.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </div>
       </div>
       
-      <div className="h-[320px] relative">
+      <div className="h-[280px] relative flex items-center justify-center">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -168,103 +163,84 @@ export const OverallSalesPieChart = ({ siteId, month, months, year, years }) => 
               cx="50%"
               cy="50%"
               labelLine={false}
-              label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, value }) => {
-                // Only show label if value is significant (> 2% and value > 0)
-                if (percent < 0.02 || value <= 0) return null;
-                
-                const RADIAN = Math.PI / 180;
-                const radius = innerRadius + (outerRadius - innerRadius) * 0.7;
-                const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                const y = cy + radius * Math.sin(-midAngle * RADIAN);
-                
-                return (
-                  <text
-                    x={x}
-                    y={y}
-                    fill={textColor}
-                    textAnchor={x > cx ? 'start' : 'end'}
-                    dominantBaseline="central"
-                    fontSize={13}
-                    fontWeight={600}
-                    style={{
-                      filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))',
-                    }}
-                  >
-                    {`${(percent * 100).toFixed(1)}%`}
-                  </text>
-                );
-              }}
-              innerRadius={60}
-              outerRadius={110}
-              paddingAngle={2}
+              label={false}
+              innerRadius={70}
+              outerRadius={120}
+              paddingAngle={hasMultipleSegments ? 3 : 0}
               fill="#8884d8"
               dataKey="value"
               stroke="hsl(var(--card))"
-              strokeWidth={2}
+              strokeWidth={3}
+              startAngle={90}
+              endAngle={-270}
             >
               {chartData.map((entry, index) => (
                 <Cell 
                   key={`cell-${index}`} 
                   fill={entry.color}
                   style={{
-                    filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))',
-                    transition: 'opacity 0.2s',
+                    filter: 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.15))',
+                    transition: 'all 0.3s ease',
+                    cursor: 'pointer',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.filter = 'drop-shadow(0 6px 12px rgba(0, 0, 0, 0.25)) brightness(1.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.filter = 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.15))';
                   }}
                 />
               ))}
             </Pie>
-            {/* Center label showing total */}
+            {/* Center label showing total - improved styling */}
             <text
               x="50%"
-              y="48%"
+              y="45%"
               textAnchor="middle"
               dominantBaseline="middle"
-              fill={textColor}
-              fontSize={16}
-              fontWeight={700}
+              fill="hsl(var(--foreground))"
+              fontSize={14}
+              fontWeight={600}
               style={{
-                filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))',
+                opacity: 0.9,
               }}
             >
               Total Sales
             </text>
             <text
               x="50%"
-              y="52%"
+              y="55%"
               textAnchor="middle"
               dominantBaseline="middle"
-              fill={textColor}
-              fontSize={14}
-              fontWeight={500}
-              opacity={0.8}
+              fill="hsl(var(--foreground))"
+              fontSize={20}
+              fontWeight={700}
+              style={{
+                letterSpacing: '-0.02em',
+              }}
             >
-              £{(total / 1000).toFixed(0)}k
+              {formatTotal(total)}
             </text>
             <Tooltip content={<CustomTooltip />} />
             <Legend
               verticalAlign="bottom"
-              height={60}
-              wrapperStyle={{ paddingTop: "10px" }}
+              height={50}
+              wrapperStyle={{ paddingTop: "15px" }}
               iconType="circle"
+              iconSize={10}
               formatter={(value, entry) => {
                 const item = chartData.find(d => d.name === value);
                 const percentage = item ? ((item.value / total) * 100).toFixed(1) : '0.0';
                 return (
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-sm font-medium text-foreground">
                     <span style={{ color: entry.color, fontWeight: 600 }}>{value}</span>
-                    <span className="ml-2 opacity-70">({percentage}%)</span>
+                    <span className="ml-2 text-muted-foreground">({percentage}%)</span>
                   </span>
                 );
               }}
             />
           </PieChart>
         </ResponsiveContainer>
-      </div>
-      
-      <div className="mt-4 pt-3 border-t border-border">
-        <p className="text-xs text-muted-foreground text-center">
-          Breakdown: Fuel sales (Non-bunkered & Bunkered)
-        </p>
       </div>
     </div>
   );

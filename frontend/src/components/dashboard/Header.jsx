@@ -1,5 +1,4 @@
-import { Search, Bell, Menu, X, Moon, Sun } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Bell, Moon, Sun } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 
 export const Header = ({ sidebarOpen, onToggleSidebar, totalSales }) => {
@@ -21,28 +20,8 @@ export const Header = ({ sidebarOpen, onToggleSidebar, totalSales }) => {
 
   return (
     <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 lg:px-6">
-      {/* Toggle Button & Search */}
-      <div className="flex items-center gap-2 lg:gap-4 flex-1">
-        <button
-          onClick={onToggleSidebar}
-          className="p-2 rounded-lg hover:bg-muted transition-colors"
-          title={sidebarOpen ? "Hide Sidebar" : "Show Sidebar"}
-        >
-          {sidebarOpen ? (
-            <X className="w-5 h-5 text-muted-foreground" />
-          ) : (
-            <Menu className="w-5 h-5 text-muted-foreground" />
-          )}
-        </button>
-
-        <div className="relative flex-1 max-w-md hidden sm:block">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search orders, transaction etc"
-            className="pl-10 bg-background border-border w-full"
-          />
-        </div>
-      </div>
+      {/* Spacer for layout */}
+      <div className="flex-1" />
 
       {/* Actions */}
       <div className="flex items-center gap-2 lg:gap-4">

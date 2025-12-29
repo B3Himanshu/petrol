@@ -146,11 +146,13 @@ router.get('/metrics', async (req, res) => {
       }
     });
     
-    // Calculate total fuel volume (sum across all months)
-    const totalFuelVolume = parseFloat(monthly.bunkered_volume || 0) + 
-                           parseFloat(monthly.non_bunkered_volume || 0);
+    // Calculate total fuel volume - use sale_volume from fuel_margin_data to match Excel data
+    // Fallback to monthly_summary if fuel_margin_data doesn't have sale_volume
+    const totalFuelVolume = parseFloat(fuelMargin.sale_volume || 0) || 
+                           (parseFloat(monthly.bunkered_volume || 0) + 
+                            parseFloat(monthly.non_bunkered_volume || 0));
     
-    // Calculate net sales (sum across all months)
+    // Calculate net sales (sum across all months) - use net_sales from fuel_margin_data to match Excel
     const totalFuelSales = parseFloat(monthly.bunkered_sales || 0) + 
                           parseFloat(monthly.non_bunkered_sales || 0);
     const netSales = parseFloat(fuelMargin.net_sales || totalFuelSales);
@@ -354,7 +356,9 @@ router.get('/charts/monthly-performance', async (req, res) => {
         SELECT 
           month,
           SUM(net_sales) as net_sales,
-          SUM(fuel_profit) as fuel_profit
+          SUM(fuel_profit) as fuel_profit,
+          SUM(sale_volume) as sale_volume,
+          AVG(ppl) as avg_ppl
         FROM fuel_margin_data
         WHERE site_code = $1
           AND year IN (${yearPlaceholders})
@@ -367,17 +371,20 @@ router.get('/charts/monthly-performance', async (req, res) => {
       )
       SELECT 
         am.month,
-        -- Use monthly_summary data if available, otherwise use fuel_margin_data
+        -- Prioritize fuel_margin_data.net_sales to match Excel data
+        -- Fallback to monthly_summary if fuel_margin_data is not available
         CASE 
-          WHEN md.total_fuel_sales IS NOT NULL AND md.total_fuel_sales > 0 
-          THEN md.total_fuel_sales 
-          ELSE COALESCE(fmd.net_sales, 0) 
+          WHEN fmd.net_sales IS NOT NULL AND fmd.net_sales > 0 
+          THEN fmd.net_sales 
+          ELSE COALESCE(md.total_fuel_sales, 0) 
         END as total_fuel_sales,
         CASE 
-          WHEN md.fuel_profit IS NOT NULL 
-          THEN md.fuel_profit 
-          ELSE COALESCE(fmd.fuel_profit, 0) 
+          WHEN fmd.fuel_profit IS NOT NULL 
+          THEN fmd.fuel_profit 
+          ELSE COALESCE(md.fuel_profit, 0) 
         END as fuel_profit,
+        COALESCE(fmd.sale_volume, 0) as sale_volume,
+        COALESCE(fmd.avg_ppl, 0) as avg_ppl,
         COALESCE(md.shop_sales, 0) as shop_sales,
         COALESCE(md.valet_sales, 0) as valet_sales
       FROM all_months am
@@ -415,6 +422,8 @@ router.get('/charts/monthly-performance', async (req, res) => {
     }
     const salesData = new Array(12).fill(0);
     const profitData = new Array(12).fill(0);
+    const saleVolumeData = new Array(12).fill(0);
+    const pplData = new Array(12).fill(0);
     const shopSalesData = new Array(12).fill(0);
     const valetSalesData = new Array(12).fill(0);
     
@@ -431,6 +440,8 @@ router.get('/charts/monthly-performance', async (req, res) => {
       if (monthIndex >= 0 && monthIndex < 12) {
         salesData[monthIndex] = parseFloat(row.total_fuel_sales || 0);
         profitData[monthIndex] = parseFloat(row.fuel_profit || 0);
+        saleVolumeData[monthIndex] = parseFloat(row.sale_volume || 0);
+        pplData[monthIndex] = parseFloat(row.avg_ppl || 0);
         shopSalesData[monthIndex] = parseFloat(row.shop_sales || 0);
         valetSalesData[monthIndex] = parseFloat(row.valet_sales || 0);
       }
@@ -454,6 +465,14 @@ router.get('/charts/monthly-performance', async (req, res) => {
         {
           name: 'Profit',
           data: profitData
+        },
+        {
+          name: 'Sale Volume',
+          data: saleVolumeData
+        },
+        {
+          name: 'PPL',
+          data: pplData
         },
         {
           name: 'Shop Sales',
@@ -573,11 +592,19 @@ router.get('/charts/sales-distribution', async (req, res) => {
       yearPlaceholders
     });
     
-    // Get monthly summary aggregated for sales breakdown
-    const salesDistQuery = `
+    // Get sales data from fuel_margin_data (net_sales) to match Excel data
+    // Also get shop/valet sales from monthly_summary for breakdown
+    const fuelSalesQuery = `
       SELECT 
-        SUM(bunkered_sales) as bunkered_sales,
-        SUM(non_bunkered_sales) as non_bunkered_sales,
+        SUM(net_sales) as net_sales
+      FROM fuel_margin_data
+      WHERE site_code = $1
+        AND month IN (${monthPlaceholders})
+        AND year IN (${yearPlaceholders});
+    `;
+    
+    const shopValetQuery = `
+      SELECT 
         SUM(shop_sales) as shop_sales,
         SUM(valet_sales) as valet_sales
       FROM monthly_summary
@@ -585,17 +612,31 @@ router.get('/charts/sales-distribution', async (req, res) => {
         AND month IN (${monthPlaceholders})
         AND year IN (${yearPlaceholders});
     `;
-    console.log('📊 [Backend] Executing sales distribution query:', {
-      query: salesDistQuery,
+    
+    console.log('📊 [Backend] Executing sales distribution queries:', {
+      fuelSalesQuery,
+      shopValetQuery,
       params: allParams
     });
-    const result = await query(salesDistQuery, allParams);
-    console.log('📊 [Backend] Sales distribution query result:', {
-      rowCount: result.rows.length,
-      data: result.rows[0]
+    
+    const [fuelResult, shopValetResult] = await Promise.all([
+      query(fuelSalesQuery, allParams),
+      query(shopValetQuery, allParams)
+    ]);
+    
+    console.log('📊 [Backend] Sales distribution query results:', {
+      fuelSales: {
+        rowCount: fuelResult.rows.length,
+        data: fuelResult.rows[0]
+      },
+      shopValet: {
+        rowCount: shopValetResult.rows.length,
+        data: shopValetResult.rows[0]
+      }
     });
     
-    if (result.rows.length === 0 || !result.rows[0]) {
+    if ((fuelResult.rows.length === 0 || !fuelResult.rows[0]) && 
+        (shopValetResult.rows.length === 0 || !shopValetResult.rows[0])) {
       return res.json({
         success: true,
         data: [
@@ -606,10 +647,12 @@ router.get('/charts/sales-distribution', async (req, res) => {
       });
     }
     
-    const row = result.rows[0];
-    const fuelSales = parseFloat(row.bunkered_sales || 0) + parseFloat(row.non_bunkered_sales || 0);
-    const shopSales = parseFloat(row.shop_sales || 0);
-    const valetSales = parseFloat(row.valet_sales || 0);
+    // Use net_sales from fuel_margin_data (matches Excel data)
+    const fuelRow = fuelResult.rows[0] || {};
+    const shopValetRow = shopValetResult.rows[0] || {};
+    const fuelSales = parseFloat(fuelRow.net_sales || 0);
+    const shopSales = parseFloat(shopValetRow.shop_sales || 0);
+    const valetSales = parseFloat(shopValetRow.valet_sales || 0);
     
     const responseData = [
       { name: 'Fuel Sales', value: fuelSales },

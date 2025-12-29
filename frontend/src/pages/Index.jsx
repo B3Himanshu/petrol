@@ -267,6 +267,9 @@ const Index = () => {
         />
       )}
 
+      {/* Sidebar - Outside transition container to ensure fixed positioning */}
+      <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} />
+
       {/* Main Dashboard - Animated Entry */}
       <div
         className={`transition-all duration-1200 ease-out ${
@@ -275,8 +278,6 @@ const Index = () => {
             : 'opacity-0 translate-y-0 pointer-events-none'
         }`}
       >
-        <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} />
-        
         <main 
           style={{ willChange: 'margin-left' }}
           className={`transition-[margin-left] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-0'} ml-0`}

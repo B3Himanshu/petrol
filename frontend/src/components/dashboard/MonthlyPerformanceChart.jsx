@@ -1,4 +1,4 @@
-import { useState, useEffect, memo, useMemo } from "react";
+import { useState, useEffect, memo, useMemo, useRef } from "react";
 import {
   BarChart,
   Bar,
@@ -11,13 +11,13 @@ import {
   LineChart,
   Line,
 } from "recharts";
-import { BarChart3, TrendingUp } from "lucide-react";
+import { BarChart3, TrendingUp, ChevronDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { dashboardAPI } from "@/services/api";
 
 // Unified Custom Tooltip component for both bar and line charts
-// This will be created inside the component to access filteredData
-const createCustomTooltip = (chartData) => {
+// This will be created inside the component to access filteredData and selectedMetrics
+const createCustomTooltip = (chartData, selectedMetrics) => {
   return ({ active, payload, label }) => {
     // Debug logging
     if (active) {
@@ -95,7 +95,7 @@ const createCustomTooltip = (chartData) => {
     
     // Fallback: look up from chartData using the label (month)
     // This is especially important when payload is empty (common with bar charts)
-    if (!dataPoint || Object.keys(dataPoint).length === 0 || !dataPoint.month || !dataPoint.fuel) {
+    if (!dataPoint || Object.keys(dataPoint).length === 0 || !dataPoint.month) {
       // Try to find by monthLabel first, then by label
       const lookupLabel = monthLabel || label;
       if (lookupLabel) {
@@ -115,40 +115,54 @@ const createCustomTooltip = (chartData) => {
       monthLabel = dataPoint.month;
     }
     
-    // Show only fuel sales
-    const categoryKey = 'fuel';
+    // Map metric names to data keys and colors
+    const metricKeyMap = {
+      'Sales': 'sales',
+      'Profit': 'profit',
+      'Sale Volume': 'saleVolume',
+      'PPL': 'ppl'
+    };
     
-    // Debug: log what we're about to render
-    console.log('🔍 [CustomTooltip] Rendering tooltip:', { label, dataPoint, hasData: Object.keys(dataPoint).length > 0 });
+    const metricColors = {
+      'Sales': '#3b82f6', // Blue
+      'Profit': '#10b981', // Green
+      'Sale Volume': '#f59e0b', // Orange
+      'PPL': '#8b5cf6' // Purple
+    };
     
-    // Get fuel value - prioritize dataPoint (works even when payload is empty)
-    let value = 0;
-    // Method 1: Try to get from dataPoint first (works even when payload is empty)
-    if (dataPoint && dataPoint[categoryKey] !== undefined && dataPoint[categoryKey] !== null) {
-      value = parseFloat(dataPoint[categoryKey] || 0);
-    } 
-    // Method 2: Try to get from payload entry
-    else if (payload && payload.length > 0) {
-      const entry = payload.find(p => p.dataKey === categoryKey);
-      if (entry && entry.value !== undefined && entry.value !== null) {
-        value = parseFloat(entry.value || 0);
-      }
-    }
-    
-    const categoryName = categoryLabels[categoryKey] || categoryKey;
-    const payloadEntry = payload && payload.length > 0 ? payload.find(p => p.dataKey === categoryKey) : null;
-    const color = payloadEntry?.color || payloadEntry?.stroke || payloadEntry?.fill || categoryColors[categoryKey] || "#8884d8";
+    // Ensure we have at least one metric
+    const activeMetrics = selectedMetrics && selectedMetrics.length > 0 ? selectedMetrics : ['Sales'];
     
     // Ensure we have a valid month label to display
     const displayLabel = monthLabel || label || 'Unknown';
+    
+    // Get all selected metrics' values
+    const metricValues = activeMetrics.map(metric => {
+      const categoryKey = metricKeyMap[metric] || 'sales';
+      let value = 0;
+      
+      // Try to get from dataPoint first
+      if (dataPoint && dataPoint[categoryKey] !== undefined) {
+        value = parseFloat(dataPoint[categoryKey] || 0);
+      } 
+      // Try to get from payload
+      else if (payload && payload.length > 0) {
+        const entry = payload.find(p => p.dataKey === categoryKey);
+        if (entry && entry.value !== undefined && entry.value !== null) {
+          value = parseFloat(entry.value || 0);
+        }
+      }
+      
+      return { metric, value, key: categoryKey };
+    });
     
     const tooltipContent = (
       <div 
         className="rounded-lg p-3 shadow-xl min-w-[180px]"
         style={{
-          backgroundColor: "hsl(222, 47%, 11%)", // Dark background
-          border: "1px solid hsl(217, 33%, 17%)", // Border
-          color: "#ffffff", // White text
+          backgroundColor: "hsl(222, 47%, 11%)",
+          border: "1px solid hsl(217, 33%, 17%)",
+          color: "#ffffff",
           zIndex: 99999,
           pointerEvents: 'none',
           boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2)",
@@ -164,19 +178,28 @@ const createCustomTooltip = (chartData) => {
         >
           {displayLabel}
         </p>
-        <div className="flex items-center">
-          <span 
-            className="text-sm font-medium"
-            style={{ color: color }}
-          >
-            {categoryName}: 
-          </span>
-          <span 
-            className="text-sm ml-1"
-            style={{ color: "#ffffff" }}
-          >
-            {value.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </span>
+        <div className="space-y-1">
+          {metricValues.map(({ metric, value }) => (
+            <div key={metric} className="flex items-center">
+              <span 
+                className="text-sm font-medium"
+                style={{ color: metricColors[metric] || "#8884d8" }}
+              >
+                {metric}: 
+              </span>
+              <span 
+                className="text-sm ml-1"
+                style={{ color: "#ffffff" }}
+              >
+                {metric === 'Sale Volume' 
+                  ? `${value.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} L`
+                  : metric === 'PPL'
+                  ? `${value.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} p`
+                  : `£${value.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                }
+              </span>
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -190,8 +213,45 @@ const createCustomTooltip = (chartData) => {
 const MonthlyPerformanceChartComponent = ({ siteId, year, years, month, months }) => {
   // JSX version: no TypeScript generic on useState
   const [viewType, setViewType] = useState("bar");
+  const [selectedMetrics, setSelectedMetrics] = useState(["Sales"]); // Array of selected metrics
   const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [metricsDropdownOpen, setMetricsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  
+  // Available metrics
+  const availableMetrics = [
+    { value: "Sales", label: "Sales", color: "#3b82f6" },
+    { value: "Profit", label: "Profit", color: "#10b981" },
+    { value: "Sale Volume", label: "Sale Volume", color: "#f59e0b" },
+    { value: "PPL", label: "PPL", color: "#8b5cf6" }
+  ];
+  
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setMetricsDropdownOpen(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+  
+  const toggleMetric = (metric) => {
+    setSelectedMetrics(prev => {
+      if (prev.includes(metric)) {
+        const newSelection = prev.filter(m => m !== metric);
+        // Ensure at least one metric is selected
+        return newSelection.length > 0 ? newSelection : ['Sales'];
+      } else {
+        return [...prev, metric];
+      }
+    });
+  };
 
   // Use years array if provided, otherwise use single year
   const yearsToFetch = years && years.length > 0 ? years : (year ? [year] : []);
@@ -219,9 +279,12 @@ const MonthlyPerformanceChartComponent = ({ siteId, year, years, month, months }
           });
           
           // Transform API response to chart format
-          // API returns: {labels: ['Jan', ...], datasets: [{name: 'Sales', data: [...]}, {name: 'Profit', data: [...]}, {name: 'Shop Sales', data: [...]}, {name: 'Valet Sales', data: [...]}]}
-          // We need: [{month: 'Jan', fuel: ..., shop: ..., valet: ...}, ...]
+          // API returns: {labels: ['Jan', ...], datasets: [{name: 'Sales', data: [...]}, {name: 'Profit', data: [...]}, {name: 'Sale Volume', data: [...]}, {name: 'PPL', data: [...]}, ...]}
+          // We need: [{month: 'Jan', sales: ..., profit: ..., saleVolume: ..., ppl: ...}, ...]
           const salesDataset = response.datasets.find(d => d.name === 'Sales');
+          const profitDataset = response.datasets.find(d => d.name === 'Profit');
+          const saleVolumeDataset = response.datasets.find(d => d.name === 'Sale Volume');
+          const pplDataset = response.datasets.find(d => d.name === 'PPL');
           const shopSalesDataset = response.datasets.find(d => d.name === 'Shop Sales');
           const valetSalesDataset = response.datasets.find(d => d.name === 'Valet Sales');
           
@@ -231,6 +294,11 @@ const MonthlyPerformanceChartComponent = ({ siteId, year, years, month, months }
             const index = response.labels.indexOf(monthLabel);
             return {
               month: monthLabel,
+              sales: index >= 0 ? (salesDataset?.data[index] || 0) : 0,
+              profit: index >= 0 ? (profitDataset?.data[index] || 0) : 0,
+              saleVolume: index >= 0 ? (saleVolumeDataset?.data[index] || 0) : 0,
+              ppl: index >= 0 ? (pplDataset?.data[index] || 0) : 0,
+              // Keep fuel for backward compatibility (maps to sales)
               fuel: index >= 0 ? (salesDataset?.data[index] || 0) : 0,
               shop: index >= 0 ? (shopSalesDataset?.data[index] || 0) : 0,
               valet: index >= 0 ? (valetSalesDataset?.data[index] || 0) : 0,
@@ -297,11 +365,38 @@ const MonthlyPerformanceChartComponent = ({ siteId, year, years, month, months }
     monthsToDisplay = monthOrder.filter(m => selectedMonthNames.includes(m));
   }
   
-  // Filter data to show only fuel data
-  let filteredData = chartData.map(item => ({
-    month: item.month,
-    fuel: item.fuel || 0,
-  }));    
+  // Map metric names to data keys
+  const metricKeyMap = {
+    'Sales': 'sales',
+    'Profit': 'profit',
+    'Sale Volume': 'saleVolume',
+    'PPL': 'ppl'
+  };
+  
+  // Ensure at least one metric is selected
+  const activeMetrics = selectedMetrics.length > 0 ? selectedMetrics : ['Sales'];
+  
+  // Filter data to include all selected metrics
+  let filteredData = chartData.map(item => {
+    const dataPoint = {
+      month: item.month,
+      // Keep all metrics for tooltip and chart
+      sales: item.sales || 0,
+      profit: item.profit || 0,
+      saleVolume: item.saleVolume || 0,
+      ppl: item.ppl || 0,
+    };
+    
+    // Add mapped keys for each metric
+    activeMetrics.forEach(metric => {
+      const key = metricKeyMap[metric];
+      if (key) {
+        dataPoint[key] = item[key] || 0;
+      }
+    });
+    
+    return dataPoint;
+  });    
   
   // Ensure only selected months (or all months if not filtered) are present in the correct order
   const completeData = monthsToDisplay.map(monthLabel => {
@@ -310,22 +405,38 @@ const MonthlyPerformanceChartComponent = ({ siteId, year, years, month, months }
       return existingData;
     }
     // If month is missing, add it with zero values
-    return {
+    const emptyData = {
       month: monthLabel,
-      fuel: 0,
+      sales: 0,
+      profit: 0,
+      saleVolume: 0,
+      ppl: 0,
     };
+    
+    // Add mapped keys for each metric
+    activeMetrics.forEach(metric => {
+      const key = metricKeyMap[metric];
+      if (key) {
+        emptyData[key] = 0;
+      }
+    });
+    
+    return emptyData;
   });
   
   filteredData = completeData;
   
   // Create tooltip component with memoization
-  const tooltipComponent = useMemo(() => createCustomTooltip(filteredData), [filteredData]);
+  const tooltipComponent = useMemo(() => createCustomTooltip(filteredData, activeMetrics), [filteredData, activeMetrics]);
   
   // Log filtered data to debug
   console.log('📊 [MonthlyPerformanceChart] Filtered data for chart:', {
     totalMonths: filteredData.length,
     allMonths: filteredData.map(d => d.month),
-    monthsWithData: filteredData.filter(d => d.fuel > 0).length,
+    monthsWithData: filteredData.filter(d => activeMetrics.some(m => {
+      const key = metricKeyMap[m];
+      return key && d[key] > 0;
+    })).length,
     sampleData: filteredData.slice(0, 3),
     lastMonths: filteredData.slice(9, 12)
   });
@@ -363,6 +474,74 @@ const MonthlyPerformanceChartComponent = ({ siteId, year, years, month, months }
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {/* Custom Multi-Select Metric Selector */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setMetricsDropdownOpen(!metricsDropdownOpen)}
+              className="px-3 py-2 text-sm font-semibold rounded-lg border border-border bg-background text-foreground hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-primary min-w-[150px] flex items-center justify-between gap-2"
+            >
+              <span>
+                {selectedMetrics.length === 1 
+                  ? selectedMetrics[0] 
+                  : `${selectedMetrics.length} Metrics`}
+              </span>
+              <ChevronDown className={cn(
+                "w-4 h-4 transition-transform",
+                metricsDropdownOpen && "rotate-180"
+              )} />
+            </button>
+            
+            {metricsDropdownOpen && (
+              <div className="absolute top-full left-0 mt-2 w-[180px] bg-card border border-border rounded-lg shadow-lg z-50 overflow-hidden">
+                <div className="p-2 border-b border-border">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    Select Metrics
+                  </span>
+                </div>
+                <div className="max-h-[200px] overflow-y-auto">
+                  {availableMetrics.map((metric) => {
+                    const isSelected = selectedMetrics.includes(metric.value);
+                    return (
+                      <button
+                        key={metric.value}
+                        onClick={() => toggleMetric(metric.value)}
+                        className={cn(
+                          "w-full px-3 py-2 text-sm text-left flex items-center gap-2 hover:bg-muted/50 transition-colors",
+                          isSelected && "bg-muted/30"
+                        )}
+                      >
+                        <div className={cn(
+                          "w-4 h-4 rounded border-2 flex items-center justify-center transition-colors",
+                          isSelected 
+                            ? "border-primary bg-primary" 
+                            : "border-border bg-background"
+                        )}>
+                          {isSelected && (
+                            <Check className="w-3 h-3 text-primary-foreground" />
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 flex-1">
+                          <div 
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: metric.color }}
+                          />
+                          <span className={cn(
+                            "font-medium",
+                            isSelected && "text-foreground",
+                            !isSelected && "text-muted-foreground"
+                          )}>
+                            {metric.label}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Chart Type Selector */}
           <div className="flex rounded-lg border border-border overflow-hidden bg-muted/30 p-1">
             <button
               onClick={() => setViewType("bar")}
@@ -424,9 +603,20 @@ const MonthlyPerformanceChartComponent = ({ siteId, year, years, month, months }
               tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11, fontWeight: 500 }}
               domain={[0, 'auto']}
               tickFormatter={(value) => {
-                if (value >= 1000000) return `£${(value / 1000000).toFixed(1)}M`;
-                if (value >= 1000) return `£${(value / 1000).toFixed(0)}k`;
-                return `£${value}`;
+                // Use first selected metric for formatting (or default to Sales)
+                const primaryMetric = activeMetrics[0] || 'Sales';
+                if (primaryMetric === 'Sale Volume') {
+                  if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M L`;
+                  if (value >= 1000) return `${(value / 1000).toFixed(0)}K L`;
+                  return `${value} L`;
+                } else if (primaryMetric === 'PPL') {
+                  return `${value.toFixed(2)} p`;
+                } else {
+                  // Sales or Profit
+                  if (value >= 1000000) return `£${(value / 1000000).toFixed(1)}M`;
+                  if (value >= 1000) return `£${(value / 1000).toFixed(0)}k`;
+                  return `£${value}`;
+                }
               }}
             />
             <Tooltip 
@@ -453,20 +643,23 @@ const MonthlyPerformanceChartComponent = ({ siteId, year, years, month, months }
                 <span className="text-sm font-medium capitalize text-foreground">{value}</span>
               )}
             />
-            <Bar 
-              dataKey="fuel" 
-              fill="url(#fuelGradient)" 
-              radius={[6, 6, 0, 0]}
-              isAnimationActive={true}
-              animationDuration={800}
-              name="Fuel"
-            />
-            <defs>
-              <linearGradient id="fuelGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(217, 91%, 60%)" stopOpacity={1} />
-                <stop offset="100%" stopColor="hsl(217, 91%, 50%)" stopOpacity={0.8} />
-              </linearGradient>
-            </defs>
+            {activeMetrics.map((metric, index) => {
+              const metricKey = metricKeyMap[metric] || 'sales';
+              const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
+              const color = colors[index % colors.length];
+              
+              return (
+                <Bar 
+                  key={metric}
+                  dataKey={metricKey}
+                  fill={color}
+                  radius={index === activeMetrics.length - 1 ? [6, 6, 0, 0] : [0, 0, 0, 0]}
+                  isAnimationActive={true}
+                  animationDuration={800}
+                  name={metric}
+                />
+              );
+            })}
           </BarChart>
         ) : (
           <LineChart 
@@ -497,9 +690,20 @@ const MonthlyPerformanceChartComponent = ({ siteId, year, years, month, months }
               tickLine={false}
               tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11, fontWeight: 500 }}
               tickFormatter={(value) => {
-                if (value >= 1000000) return `£${(value / 1000000).toFixed(1)}M`;
-                if (value >= 1000) return `£${(value / 1000).toFixed(0)}k`;
-                return `£${value}`;
+                // Use first selected metric for formatting (or default to Sales)
+                const primaryMetric = activeMetrics[0] || 'Sales';
+                if (primaryMetric === 'Sale Volume') {
+                  if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M L`;
+                  if (value >= 1000) return `${(value / 1000).toFixed(0)}K L`;
+                  return `${value} L`;
+                } else if (primaryMetric === 'PPL') {
+                  return `${value.toFixed(2)} p`;
+                } else {
+                  // Sales or Profit
+                  if (value >= 1000000) return `£${(value / 1000000).toFixed(1)}M`;
+                  if (value >= 1000) return `£${(value / 1000).toFixed(0)}k`;
+                  return `£${value}`;
+                }
               }}
             />
             <Tooltip 
@@ -512,18 +716,27 @@ const MonthlyPerformanceChartComponent = ({ siteId, year, years, month, months }
                 <span className="text-sm font-medium capitalize text-foreground">{value}</span>
               )}
             />
-            <Line 
-              type="monotone" 
-              dataKey="fuel" 
-              stroke="hsl(217, 91%, 60%)" 
-              strokeWidth={3} 
-              dot={{ r: 5, fill: "hsl(217, 91%, 60%)", strokeWidth: 2, stroke: "hsl(var(--card))" }} 
-              activeDot={{ r: 7, stroke: "hsl(var(--card))", strokeWidth: 2 }}
-              connectNulls={false}
-              isAnimationActive={true}
-              animationDuration={800}
-              name="Fuel"
-            />
+            {activeMetrics.map((metric, index) => {
+              const metricKey = metricKeyMap[metric] || 'sales';
+              const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
+              const color = colors[index % colors.length];
+              
+              return (
+                <Line 
+                  key={metric}
+                  type="monotone" 
+                  dataKey={metricKey}
+                  stroke={color}
+                  strokeWidth={3} 
+                  dot={{ r: 5, fill: color, strokeWidth: 2, stroke: "hsl(var(--card))" }} 
+                  activeDot={{ r: 7, stroke: "hsl(var(--card))", strokeWidth: 2 }}
+                  connectNulls={false}
+                  isAnimationActive={true}
+                  animationDuration={800}
+                  name={metric}
+                />
+              );
+            })}
           </LineChart>
         )}
       </ResponsiveContainer>
