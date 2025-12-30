@@ -270,6 +270,42 @@ export const dashboardAPI = {
     console.log('📅 [Frontend] getDateWiseData response:', response);
     return response.data;
   },
+
+  /**
+   * Get total sales across all sites
+   * @param {number|number[]|null|undefined} month - Month (1-12) or array of months. If null/undefined, gets all months.
+   * @param {number|number[]|null|undefined} year - Year or array of years. If null/undefined, gets all years.
+   */
+  getTotalSales: async (month, year) => {
+    console.log('📊 [Frontend] getTotalSales called', { month, year });
+    
+    const params = new URLSearchParams();
+    
+    // Only add month/year params if they are provided
+    if (month !== null && month !== undefined) {
+      if (Array.isArray(month) && month.length > 0) {
+        params.append('months', month.join(','));
+      } else if (month) {
+        params.append('month', month.toString());
+      }
+    }
+    
+    if (year !== null && year !== undefined) {
+      if (Array.isArray(year) && year.length > 0) {
+        params.append('years', year.join(','));
+      } else if (year) {
+        params.append('year', year.toString());
+      }
+    }
+    
+    const fullUrl = params.toString() 
+      ? `/api/dashboard/total-sales?${params}` 
+      : `/api/dashboard/total-sales`;
+    console.log('📊 [Frontend] Full API URL:', fullUrl);
+    const response = await fetchAPI(fullUrl);
+    console.log('📊 [Frontend] getTotalSales response:', response);
+    return response.data;
+  },
 };
 
 /**

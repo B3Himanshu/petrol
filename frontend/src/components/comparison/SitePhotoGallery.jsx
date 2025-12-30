@@ -4,10 +4,22 @@ import { Button } from "@/components/ui/button";
 import { sitesAPI } from "@/services/api";
 import { cn } from "@/lib/utils";
 
+// Generate SVG placeholder as data URI
+const generatePlaceholder = (text, width = 800, height = 600) => {
+  const fontSize = width < 200 ? 14 : 24;
+  const escapedText = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const svg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="#1a1a1a"/>
+  <text x="50%" y="50%" font-family="Arial, sans-serif" font-size="${fontSize}" fill="#ffffff" text-anchor="middle" dominant-baseline="middle">${escapedText}</text>
+</svg>`;
+  return `data:image/svg+xml;base64,${btoa(svg)}`;
+};
+
 export const SitePhotoGallery = ({ siteId, siteName }) => {
   const [photos, setPhotos] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [imageErrors, setImageErrors] = useState(new Set());
 
   useEffect(() => {
     if (!siteId) {
@@ -16,23 +28,31 @@ export const SitePhotoGallery = ({ siteId, siteName }) => {
       return;
     }
 
-    // Fetch site photos - for now using placeholder images
-    // In production, this would fetch actual photos from API
+    // Fetch site photos - using local station images
+    // Cycle through the 6 station images for each site
     const fetchPhotos = async () => {
       try {
         setLoading(true);
-        // TODO: Replace with actual API call when photos endpoint is available
-        // const siteData = await sitesAPI.getSitePhotos(siteId);
+        // Use local station images from public folder
+        // Each site gets 3 unique photos from the 6 available images
+        // Distribute images so different sites get different images for comparison
+        // Use siteId to create unique starting points that ensure variety
+        const startImage = ((siteId - 1) % 6) + 1; // Start image (1-6)
         
-        // Placeholder: Generate sample photo URLs
-        // In production, these would come from your database/API
-        const placeholderPhotos = [
-          `https://images.unsplash.com/photo-1549923746-c502dccb95e7?w=800&h=600&fit=crop`,
-          `https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=600&fit=crop`,
-          `https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?w=800&h=600&fit=crop`,
+        // Take 3 consecutive images, wrapping around if needed
+        const image1 = startImage;
+        const image2 = ((startImage % 6) + 1);
+        const image3 = (((startImage + 1) % 6) + 1);
+        
+        const sitePhotos = [
+          `/station-${image1}.jpg`,
+          `/station-${image2}.jpg`,
+          `/station-${image3}.jpg`,
         ];
         
-        setPhotos(placeholderPhotos);
+        setPhotos(sitePhotos);
+        setImageErrors(new Set()); // Reset image errors when photos change
+        setCurrentIndex(0); // Reset to first image
       } catch (error) {
         console.error('Error fetching site photos:', error);
         setPhotos([]);
@@ -89,11 +109,14 @@ export const SitePhotoGallery = ({ siteId, siteName }) => {
 
       <div className="relative rounded-lg overflow-hidden bg-muted aspect-video">
         <img
-          src={photos[currentIndex]}
+          src={imageErrors.has(currentIndex) ? generatePlaceholder(siteName, 800, 600) : photos[currentIndex]}
           alt={`${siteName} - Photo ${currentIndex + 1}`}
           className="w-full h-full object-cover"
           onError={(e) => {
-            e.target.src = `https://via.placeholder.com/800x600/1a1a1a/ffffff?text=${encodeURIComponent(siteName)}`;
+            if (!imageErrors.has(currentIndex)) {
+              setImageErrors(prev => new Set(prev).add(currentIndex));
+              e.target.src = generatePlaceholder(siteName, 800, 600);
+            }
           }}
         />
 
@@ -146,7 +169,22 @@ export const SitePhotoGallery = ({ siteId, siteName }) => {
                 alt={`Thumbnail ${index + 1}`}
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  e.target.src = `https://via.placeholder.com/80/1a1a1a/ffffff?text=${index + 1}`;
+                  if (!imageErrors.has(index)) {
+                    setImageErrors(prev => new Set(prev).add(index));
+                    e.target.src = generatePlaceholder(`${index + 1}`, 80, 80);
+                  } else {
+                    e.target.src = generatePlaceholder(`${index + 1}`, 80, 80);
+                  }
+                }}
+                onLoad={() => {
+                  // Remove from errors if image loads successfully
+                  if (imageErrors.has(index)) {
+                    setImageErrors(prev => {
+                      const newSet = new Set(prev);
+                      newSet.delete(index);
+                      return newSet;
+                    });
+                  }
                 }}
               />
             </button>

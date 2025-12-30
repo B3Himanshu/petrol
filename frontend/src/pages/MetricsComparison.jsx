@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { Header } from "@/components/dashboard/Header";
 import { SplineLoader } from "@/components/dashboard/SplineLoader";
+import { SiteCard } from "@/components/dashboard/SiteCard";
 import { sitesAPI, dashboardAPI } from "@/services/api";
 import { BarChart3, Filter, Table as TableIcon, PieChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -115,6 +116,7 @@ const MetricsComparison = () => {
     }
     return false;
   });
+  const [totalSalesAllSites, setTotalSalesAllSites] = useState(null);
   
   // Update responsive state on window resize
   useEffect(() => {
@@ -209,6 +211,29 @@ const MetricsComparison = () => {
       }, { once: true });
     }
   }, []);
+
+  // Fetch total sales across all sites (all months, all years)
+  useEffect(() => {
+    const fetchTotalSales = async () => {
+      try {
+        // Get all sales data (no month/year filter) - shows grand total
+        console.log('📊 [MetricsComparison] Fetching total sales across all sites (all data):');
+        
+        const totalSalesData = await dashboardAPI.getTotalSales(null, null);
+        setTotalSalesAllSites(totalSalesData?.totalSales || 0);
+        
+        console.log('✅ [MetricsComparison] Total sales across all sites received:', {
+          totalSales: totalSalesData?.totalSales,
+          timestamp: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error('❌ [MetricsComparison] Error fetching total sales:', error);
+        setTotalSalesAllSites(0);
+      }
+    };
+
+    fetchTotalSales();
+  }, []); // Only fetch once on mount
 
   // Fetch all sites
   useEffect(() => {
@@ -862,7 +887,7 @@ const MetricsComparison = () => {
           <Header 
             sidebarOpen={sidebarOpen} 
             onToggleSidebar={toggleSidebar} 
-            totalSales={0}
+            totalSales={totalSalesAllSites}
           />
           
           <div className="p-4 lg:p-6">
@@ -940,38 +965,69 @@ const MetricsComparison = () => {
               </div>
             </div>
 
-            {/* View Toggle */}
-            {appliedMetrics.length > 0 && (
-              <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div className="flex-1">
-                  <h3 className="text-base sm:text-lg font-semibold text-foreground mb-1">
-                    All Sites Comparison
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
-                    Comparing {sitesData.length} sites by {appliedMetrics.map(m => METRICS_OPTIONS.find(o => o.value === m)?.label).join(', ')}
-                  </p>
+            {/* All 29 Sites - Show after filters are applied, only in charts view */}
+            {appliedMetrics.length > 0 && sitesData.length > 0 && viewMode === 'charts' && (
+              <div className="mb-6 lg:mb-8">
+                <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="flex-1">
+                    <h3 className="text-lg sm:text-xl font-bold text-foreground mb-1">
+                      All 29 Sites
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Comparing {sitesData.length} sites by {appliedMetrics.map(m => METRICS_OPTIONS.find(o => o.value === m)?.label).join(', ')}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant={viewMode === 'charts' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setViewMode('charts')}
+                      className="flex items-center gap-2 text-xs sm:text-sm"
+                    >
+                      <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="hidden xs:inline">Charts</span>
+                      <span className="xs:hidden">Chart</span>
+                    </Button>
+                    <Button
+                      variant={viewMode === 'table' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setViewMode('table')}
+                      className="flex items-center gap-2 text-xs sm:text-sm"
+                    >
+                      <TableIcon className="w-3 h-3 sm:w-4 sm:h-4" />
+                      Table
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant={viewMode === 'charts' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setViewMode('charts')}
-                    className="flex items-center gap-2 text-xs sm:text-sm"
-                  >
-                    <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4" />
-                    <span className="hidden xs:inline">Charts</span>
-                    <span className="xs:hidden">Chart</span>
-                  </Button>
-                  <Button
-                    variant={viewMode === 'table' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setViewMode('table')}
-                    className="flex items-center gap-2 text-xs sm:text-sm"
-                  >
-                    <TableIcon className="w-3 h-3 sm:w-4 sm:h-4" />
-                    Table
-                  </Button>
-                </div>
+                
+                {loadingData ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                      <div key={i} className="chart-card h-80 animate-pulse" />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
+                    {getSortedSitesData().map((siteData, index) => {
+                      // Find the corresponding site info from sites array
+                      const siteInfo = sites.find(s => s.id === siteData.siteId);
+                      return (
+                        <SiteCard
+                          key={siteData.siteId}
+                          site={{
+                            siteId: siteData.siteId,
+                            siteName: siteData.siteName,
+                            name: siteData.siteName,
+                            id: siteData.siteId,
+                            city: siteData.city
+                          }}
+                          metrics={siteData}
+                          index={index}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 
@@ -1070,7 +1126,41 @@ const MetricsComparison = () => {
 
             {/* Table View */}
             {appliedMetrics.length > 0 && viewMode === 'table' && (
-              <div className="chart-card animate-slide-up">
+              <>
+                {/* Header with view toggle */}
+                <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="flex-1">
+                    <h3 className="text-lg sm:text-xl font-bold text-foreground mb-1">
+                      All 29 Sites
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Comparing {sitesData.length} sites by {appliedMetrics.map(m => METRICS_OPTIONS.find(o => o.value === m)?.label).join(', ')}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant={viewMode === 'charts' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setViewMode('charts')}
+                      className="flex items-center gap-2 text-xs sm:text-sm"
+                    >
+                      <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="hidden xs:inline">Charts</span>
+                      <span className="xs:hidden">Chart</span>
+                    </Button>
+                    <Button
+                      variant={viewMode === 'table' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setViewMode('table')}
+                      className="flex items-center gap-2 text-xs sm:text-sm"
+                    >
+                      <TableIcon className="w-3 h-3 sm:w-4 sm:h-4" />
+                      Table
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="chart-card animate-slide-up">
 
                 {loadingData ? (
                   <div className="flex items-center justify-center h-64">
@@ -1159,7 +1249,8 @@ const MetricsComparison = () => {
                     </div>
                   </div>
                 )}
-              </div>
+                </div>
+              </>
             )}
 
             {/* Empty State */}

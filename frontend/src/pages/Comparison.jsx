@@ -21,6 +21,7 @@ const Comparison = () => {
     }
     return true;
   });
+  const [totalSalesAllSites, setTotalSalesAllSites] = useState(null);
 
   // Handle responsive sidebar on resize
   useEffect(() => {
@@ -78,6 +79,29 @@ const Comparison = () => {
     }
   }, []);
 
+  // Fetch total sales across all sites (all months, all years)
+  useEffect(() => {
+    const fetchTotalSales = async () => {
+      try {
+        // Get all sales data (no month/year filter) - shows grand total
+        console.log('📊 [Comparison] Fetching total sales across all sites (all data):');
+        
+        const totalSalesData = await dashboardAPI.getTotalSales(null, null);
+        setTotalSalesAllSites(totalSalesData?.totalSales || 0);
+        
+        console.log('✅ [Comparison] Total sales across all sites received:', {
+          totalSales: totalSalesData?.totalSales,
+          timestamp: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error('❌ [Comparison] Error fetching total sales:', error);
+        setTotalSalesAllSites(0);
+      }
+    };
+
+    fetchTotalSales();
+  }, []); // Only fetch once on mount
+
   return (
     <div className="min-h-screen bg-background relative">
       {/* Spline Loading Screen */}
@@ -106,7 +130,7 @@ const Comparison = () => {
           <Header 
             sidebarOpen={sidebarOpen} 
             onToggleSidebar={toggleSidebar} 
-            totalSales={0}
+            totalSales={totalSalesAllSites}
           />
           
           <div className="p-4 lg:p-6">

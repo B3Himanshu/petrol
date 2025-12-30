@@ -98,7 +98,7 @@ const MultiSelect = ({ options, selected, onChange, placeholder, label }) => {
           <ChevronDown className={cn("ml-2 h-4 w-4 shrink-0 opacity-50 transition-transform", open && "rotate-180")} />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[200px] p-0" align="start">
+      <PopoverContent className="w-[200px] sm:w-[250px] p-0" align="start">
         {/* Select All / Clear All button */}
         <div className="border-b p-2">
           <Button
@@ -293,17 +293,17 @@ export const SiteComparison = () => {
   const canCompare = appliedSite1 && appliedSite2 && appliedSite1 !== appliedSite2;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Filter Section */}
       <div className="chart-card animate-slide-up">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
           <div className="flex items-center gap-2">
             <Filter className="w-4 h-4 text-primary" />
-            <span className="text-sm lg:text-base font-semibold text-foreground">
+            <span className="text-sm sm:text-base font-semibold text-foreground">
               Comparison Filters
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {(pendingSite1 || pendingSite2 || appliedSite1 || appliedSite2) && (
               <Button
                 variant="ghost"
@@ -312,7 +312,7 @@ export const SiteComparison = () => {
                 className="text-xs text-muted-foreground hover:text-foreground"
               >
                 <X className="w-4 h-4 mr-1" />
-                Clear
+                <span className="hidden xs:inline">Clear</span>
               </Button>
             )}
             <Button
@@ -320,14 +320,14 @@ export const SiteComparison = () => {
               size="sm"
               onClick={handleApply}
               disabled={!pendingSite1 || !pendingSite2 || pendingSite1 === pendingSite2 || !hasPendingChanges}
-              className="text-xs"
+              className="text-xs sm:text-sm"
             >
               Apply Filters
             </Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {/* Site 1 Selection */}
           <div>
             <label className="text-xs font-medium text-primary mb-2 block">
@@ -410,8 +410,8 @@ export const SiteComparison = () => {
         </div>
 
         {pendingSite1 === pendingSite2 && pendingSite1 && (
-          <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-            <p className="text-sm text-yellow-600 dark:text-yellow-400">
+          <div className="mt-3 sm:mt-4 p-2 sm:p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+            <p className="text-xs sm:text-sm text-yellow-600 dark:text-yellow-400">
               Please select two different sites for comparison.
             </p>
           </div>
@@ -420,7 +420,7 @@ export const SiteComparison = () => {
 
       {/* Site Photo Galleries */}
       {canCompare && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           <SitePhotoGallery 
             siteId={appliedSite1} 
             siteName={sites.find(s => s.id === appliedSite1)?.name || "Site 1"}
@@ -470,16 +470,16 @@ export const SiteComparison = () => {
 
       {/* Empty State */}
       {!canCompare && (
-        <div className="chart-card h-96 flex items-center justify-center">
-          <div className="text-center space-y-4">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-              <Filter className="w-8 h-8 text-primary" />
+        <div className="chart-card h-64 sm:h-96 flex items-center justify-center">
+          <div className="text-center space-y-3 sm:space-y-4 px-4">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+              <Filter className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">
+              <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">
                 Select Two Sites to Compare
               </h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 Choose two different sites from the filters above to view their comparison
               </p>
             </div>

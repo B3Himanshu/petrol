@@ -92,6 +92,7 @@ const Index = () => {
   const [statusData, setStatusData] = useState(null);
   const [loadingMetrics, setLoadingMetrics] = useState(false);
   const [salesDistribution, setSalesDistribution] = useState(null);
+  const [totalSalesAllSites, setTotalSalesAllSites] = useState(null);
 
   // Modal states for card clicks
   const [fuelVolumeModalOpen, setFuelVolumeModalOpen] = useState(false);
@@ -304,6 +305,45 @@ const Index = () => {
     fetchDashboardData();
   }, [selectedSite, selectedMonths, selectedYears, selectedMonth, selectedYear, filtersApplied]);
 
+  // Fetch total sales across all sites (independent of selected site)
+  // When nothing is selected, show ALL sales across all months and years
+  useEffect(() => {
+    const fetchTotalSales = async () => {
+      try {
+        // When no filters are applied, get ALL sales data (all months, all years)
+        // This shows the grand total across all sites and all time periods
+        const getAllData = !filtersApplied;
+        
+        console.log('📊 [Index] Fetching total sales across all sites:', {
+          getAllData,
+          filtersApplied,
+          timestamp: new Date().toISOString()
+        });
+        
+        // Pass null/undefined to get all data, or pass months/years if filters are applied
+        const totalSalesData = getAllData 
+          ? await dashboardAPI.getTotalSales(null, null)  // Get all months and years
+          : await dashboardAPI.getTotalSales(
+              selectedMonths && selectedMonths.length > 0 ? selectedMonths : [selectedMonth || new Date().getMonth() + 1],
+              selectedYears && selectedYears.length > 0 ? selectedYears : [selectedYear || new Date().getFullYear()]
+            );
+        
+        setTotalSalesAllSites(totalSalesData?.totalSales || 0);
+        
+        console.log('✅ [Index] Total sales across all sites received:', {
+          totalSales: totalSalesData?.totalSales,
+          getAllData,
+          timestamp: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error('❌ [Index] Error fetching total sales:', error);
+        setTotalSalesAllSites(0);
+      }
+    };
+
+    fetchTotalSales();
+  }, [filtersApplied, selectedMonths, selectedYears, selectedMonth, selectedYear]);
+
   // Format number helpers
   const formatVolume = (liters) => {
     if (!liters) return "0 L";
@@ -352,7 +392,7 @@ const Index = () => {
         <Header 
           sidebarOpen={sidebarOpen} 
           onToggleSidebar={toggleSidebar} 
-          totalSales={metrics?.netSales}
+          totalSales={totalSalesAllSites}
         />
         
         <div className="p-4 lg:p-6">

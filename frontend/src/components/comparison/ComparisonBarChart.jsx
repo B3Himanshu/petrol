@@ -1,7 +1,65 @@
+import { useState, useEffect, useRef } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { BarChart3 } from "lucide-react";
 
 export const ComparisonBarChart = ({ site1Data, site2Data, site1Name, site2Name, loading }) => {
+  const [animationProgress, setAnimationProgress] = useState(0);
+  const [hasAnimated, setHasAnimated] = useState(false);
+  const chartRef = useRef(null);
+  // Intersection Observer for scroll-triggered animation
+  useEffect(() => {
+    if (!chartRef.current || hasAnimated || !site1Data || !site2Data) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !hasAnimated) {
+            setHasAnimated(true);
+            // Start animation
+            let startTime = null;
+            const duration = 1500; // 1.5 seconds
+
+            const animate = (timestamp) => {
+              if (!startTime) startTime = timestamp;
+              const progress = Math.min((timestamp - startTime) / duration, 1);
+              
+              // Easing function for smooth animation (ease-out)
+              const easedProgress = 1 - Math.pow(1 - progress, 3);
+              setAnimationProgress(easedProgress);
+
+              if (progress < 1) {
+                requestAnimationFrame(animate);
+              } else {
+                setAnimationProgress(1);
+              }
+            };
+
+            requestAnimationFrame(animate);
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      {
+        threshold: 0.2, // Trigger when 20% of the component is visible
+        rootMargin: '0px',
+      }
+    );
+
+    observer.observe(chartRef.current);
+
+    return () => {
+      if (chartRef.current) {
+        observer.unobserve(chartRef.current);
+      }
+    };
+  }, [site1Data, site2Data, hasAnimated]);
+
+  // Reset animation when data changes
+  useEffect(() => {
+    setHasAnimated(false);
+    setAnimationProgress(0);
+  }, [site1Data, site2Data]);
+
   if (loading || !site1Data || !site2Data) {
     return (
       <div className="chart-card h-[420px] animate-slide-up">
@@ -12,25 +70,25 @@ export const ComparisonBarChart = ({ site1Data, site2Data, site1Name, site2Name,
     );
   }
 
-  // Prepare chart data - Separate by scale
+  // Prepare chart data - Separate by scale (with animation)
   // Large scale metrics (Sales, Profit, Volume)
   const largeScaleData = [
     {
       name: "Net Sales",
-      [site1Name]: site1Data.netSales || 0,
-      [site2Name]: site2Data.netSales || 0,
+      [site1Name]: (site1Data.netSales || 0) * animationProgress,
+      [site2Name]: (site2Data.netSales || 0) * animationProgress,
       type: "currency",
     },
     {
       name: "Profit",
-      [site1Name]: site1Data.profit || 0,
-      [site2Name]: site2Data.profit || 0,
+      [site1Name]: (site1Data.profit || 0) * animationProgress,
+      [site2Name]: (site2Data.profit || 0) * animationProgress,
       type: "currency",
     },
     {
       name: "Fuel Volume",
-      [site1Name]: site1Data.totalFuelVolume || 0,
-      [site2Name]: site2Data.totalFuelVolume || 0,
+      [site1Name]: (site1Data.totalFuelVolume || 0) * animationProgress,
+      [site2Name]: (site2Data.totalFuelVolume || 0) * animationProgress,
       type: "volume",
     },
   ];
@@ -39,20 +97,20 @@ export const ComparisonBarChart = ({ site1Data, site2Data, site1Name, site2Name,
   const smallScaleData = [
     {
       name: "Customers",
-      [site1Name]: site1Data.customerCount || 0,
-      [site2Name]: site2Data.customerCount || 0,
+      [site1Name]: (site1Data.customerCount || 0) * animationProgress,
+      [site2Name]: (site2Data.customerCount || 0) * animationProgress,
       type: "count",
     },
     {
       name: "Basket Size",
-      [site1Name]: site1Data.basketSize || 0,
-      [site2Name]: site2Data.basketSize || 0,
+      [site1Name]: (site1Data.basketSize || 0) * animationProgress,
+      [site2Name]: (site2Data.basketSize || 0) * animationProgress,
       type: "currency",
     },
     {
       name: "Avg PPL",
-      [site1Name]: site1Data.avgPPL || 0,
-      [site2Name]: site2Data.avgPPL || 0,
+      [site1Name]: (site1Data.avgPPL || 0) * animationProgress,
+      [site2Name]: (site2Data.avgPPL || 0) * animationProgress,
       type: "ppl",
     },
   ];
@@ -200,7 +258,7 @@ export const ComparisonBarChart = ({ site1Data, site2Data, site1Name, site2Name,
   };
 
   return (
-    <div className="space-y-6">
+    <div ref={chartRef} className="space-y-6">
       {/* Large Scale Metrics Chart */}
       {renderChart(
         largeScaleData,

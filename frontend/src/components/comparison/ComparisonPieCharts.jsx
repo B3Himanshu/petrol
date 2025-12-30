@@ -24,6 +24,9 @@ export const ComparisonPieCharts = ({ site1Id, site2Id, site1Name, site2Name, mo
   const [site1FullData, setSite1FullData] = useState([]);
   const [site2FullData, setSite2FullData] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
+  const [animationProgress, setAnimationProgress] = useState(0);
+  const [hasAnimated, setHasAnimated] = useState(false);
+  const chartsRef = useRef(null);
   const chart1Ref = useRef(null);
   const chart2Ref = useRef(null);
 
@@ -98,19 +101,59 @@ export const ComparisonPieCharts = ({ site1Id, site2Id, site1Name, site2Name, mo
     fetchData();
   }, [site1Id, site2Id, months, years]);
 
-  if (loading || loadingData) {
-    return (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {[1, 2].map((i) => (
-          <div key={i} className="chart-card h-[450px] animate-pulse">
-            <div className="flex items-center justify-center h-full">
-              <div className="text-muted-foreground">Loading chart data...</div>
-            </div>
-          </div>
-        ))}
-      </div>
+  // Intersection Observer for scroll-triggered animation
+  useEffect(() => {
+    if (!chartsRef.current || hasAnimated || !site1Data.length || !site2Data.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !hasAnimated) {
+            setHasAnimated(true);
+            // Start animation
+            let startTime = null;
+            const duration = 1500; // 1.5 seconds
+
+            const animate = (timestamp) => {
+              if (!startTime) startTime = timestamp;
+              const progress = Math.min((timestamp - startTime) / duration, 1);
+              
+              // Easing function for smooth animation (ease-out)
+              const easedProgress = 1 - Math.pow(1 - progress, 3);
+              setAnimationProgress(easedProgress);
+
+              if (progress < 1) {
+                requestAnimationFrame(animate);
+              } else {
+                setAnimationProgress(1);
+              }
+            };
+
+            requestAnimationFrame(animate);
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      {
+        threshold: 0.2, // Trigger when 20% of the component is visible
+        rootMargin: '0px',
+      }
     );
-  }
+
+    observer.observe(chartsRef.current);
+
+    return () => {
+      if (chartsRef.current) {
+        observer.unobserve(chartsRef.current);
+      }
+    };
+  }, [site1Data, site2Data, hasAnimated]);
+
+  // Reset animation when data changes
+  useEffect(() => {
+    setHasAnimated(false);
+    setAnimationProgress(0);
+  }, [site1Data, site2Data]);
 
   // Format total for display
   const formatTotal = (value) => {
@@ -122,22 +165,29 @@ export const ComparisonPieCharts = ({ site1Id, site2Id, site1Name, site2Name, mo
     return `£${value.toFixed(0)}`;
   };
 
-  // Calculate totals from full data (includes 0% values)
-  const total1 = site1FullData.length > 0 
+  // Calculate totals from full data (includes 0% values) - animated
+  const baseTotal1 = site1FullData.length > 0 
     ? site1FullData.reduce((sum, item) => sum + item.value, 0)
     : site1Data.reduce((sum, item) => sum + item.value, 0);
-  const total2 = site2FullData.length > 0 
+  const baseTotal2 = site2FullData.length > 0 
     ? site2FullData.reduce((sum, item) => sum + item.value, 0)
     : site2Data.reduce((sum, item) => sum + item.value, 0);
+  
+  const total1 = baseTotal1 * animationProgress;
+  const total2 = baseTotal2 * animationProgress;
 
-  // Create chart data for Chart.js
+  // Create chart data for Chart.js with animation
   const createChartData = (data, fullData) => {
     return {
       labels: data.map(item => item.name),
       datasets: [
         {
           label: 'Sales',
-          data: data.map(item => item.displayValue),
+          data: data.map(item => {
+            // Animate the display value
+            const animatedValue = item.displayValue * animationProgress;
+            return animatedValue;
+          }),
           backgroundColor: data.map(item => item.isZero ? `${item.color}4D` : item.color), // 30% opacity for 0% values
           borderColor: data.map(item => 'hsl(var(--card))'),
           borderWidth: 5,
@@ -193,11 +243,39 @@ export const ComparisonPieCharts = ({ site1Id, site2Id, site1Name, site2Name, mo
 
   const chart1Data = createChartData(site1Data, site1FullData.length > 0 ? site1FullData : site1Data);
   const chart2Data = createChartData(site2Data, site2FullData.length > 0 ? site2FullData : site2Data);
-  const chart1Options = createChartOptions(site1FullData.length > 0 ? site1FullData : site1Data, total1);
-  const chart2Options = createChartOptions(site2FullData.length > 0 ? site2FullData : site2Data, total2);
+  const chart1Options = createChartOptions(site1FullData.length > 0 ? site1FullData : site1Data, baseTotal1);
+  const chart2Options = createChartOptions(site2FullData.length > 0 ? site2FullData : site2Data, baseTotal2);
+
+  // Update charts when animation progresses
+  useEffect(() => {
+    if (chart1Ref.current && chart2Ref.current && hasAnimated && animationProgress > 0) {
+      // Force chart update by updating the data
+      if (chart1Ref.current.chartInstance) {
+        chart1Ref.current.chartInstance.update();
+      }
+      if (chart2Ref.current.chartInstance) {
+        chart2Ref.current.chartInstance.update();
+      }
+    }
+  }, [animationProgress, hasAnimated]);
+
+  // Early return after all hooks
+  if (loading || loadingData) {
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {[1, 2].map((i) => (
+          <div key={i} className="chart-card h-[450px] animate-pulse">
+            <div className="flex items-center justify-center h-full">
+              <div className="text-muted-foreground">Loading chart data...</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div ref={chartsRef} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Site 1 Pie Chart */}
       <div className="chart-card h-[450px] animate-slide-up">
         <div className="flex items-center justify-between mb-6 pb-4 border-b border-border/50">

@@ -843,5 +843,140 @@ router.get('/charts/date-wise', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/dashboard/total-sales
+ * Get total sales across all sites
+ * Query params: month (or months as comma-separated), year (or years as comma-separated)
+ */
+router.get('/total-sales', async (req, res) => {
+  try {
+    console.log('📊 [Backend] GET /api/dashboard/total-sales');
+    console.log('📊 [Backend] Query params:', req.query);
+    
+    const { month, months, year, years } = req.query;
+    
+    // If no month/year provided, get ALL data across all months and years
+    const getAllData = !month && !months && !year && !years;
+    
+    let totalSalesQuery, shopValetQuery, allParams;
+    
+    if (getAllData) {
+      // Get total sales across all sites, all months, all years
+      totalSalesQuery = `
+        SELECT 
+          SUM(net_sales) as total_net_sales
+        FROM fuel_margin_data;
+      `;
+      
+      shopValetQuery = `
+        SELECT 
+          SUM(shop_sales) as total_shop_sales,
+          SUM(valet_sales) as total_valet_sales
+        FROM monthly_summary;
+      `;
+      
+      allParams = [];
+      
+      console.log('📊 [Backend] Getting ALL sales data (no month/year filter)');
+    } else {
+      // Parse months - support both single month and comma-separated months
+      let monthsArray = [];
+      if (months) {
+        monthsArray = months.split(',').map(m => parseInt(m.trim(), 10)).filter(m => !isNaN(m) && m >= 1 && m <= 12);
+      } else if (month) {
+        monthsArray = [parseInt(month, 10)];
+      } else {
+        monthsArray = [new Date().getMonth() + 1];
+      }
+      
+      // Parse years - support both single year and comma-separated years
+      let yearsArray = [];
+      if (years) {
+        yearsArray = years.split(',').map(y => parseInt(y.trim(), 10)).filter(y => !isNaN(y));
+      } else if (year) {
+        yearsArray = [parseInt(year, 10)];
+      } else {
+        yearsArray = [new Date().getFullYear()];
+      }
+      
+      if (monthsArray.length === 0 || yearsArray.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid month or year parameters'
+        });
+      }
+      
+      // Build parameterized query for multiple months and years
+      const monthPlaceholders = monthsArray.map((_, i) => `$${i + 1}`).join(',');
+      const yearStartIndex = monthsArray.length + 1;
+      const yearPlaceholders = yearsArray.map((_, i) => `$${yearStartIndex + i}`).join(',');
+      allParams = [...monthsArray, ...yearsArray];
+      
+      // Get total sales across all sites from fuel_margin_data
+      totalSalesQuery = `
+        SELECT 
+          SUM(net_sales) as total_net_sales
+        FROM fuel_margin_data
+        WHERE month IN (${monthPlaceholders})
+          AND year IN (${yearPlaceholders});
+      `;
+      
+      // Also get shop and valet sales from monthly_summary
+      shopValetQuery = `
+        SELECT 
+          SUM(shop_sales) as total_shop_sales,
+          SUM(valet_sales) as total_valet_sales
+        FROM monthly_summary
+        WHERE month IN (${monthPlaceholders})
+          AND year IN (${yearPlaceholders});
+      `;
+    }
+    
+    console.log('📊 [Backend] Executing total sales queries:', {
+      totalSalesQuery,
+      shopValetQuery,
+      params: allParams,
+      getAllData
+    });
+    
+    const [totalSalesResult, shopValetResult] = await Promise.all([
+      query(totalSalesQuery, allParams),
+      query(shopValetQuery, allParams)
+    ]);
+    
+    const totalNetSales = parseFloat(totalSalesResult.rows[0]?.total_net_sales || 0);
+    const totalShopSales = parseFloat(shopValetResult.rows[0]?.total_shop_sales || 0);
+    const totalValetSales = parseFloat(shopValetResult.rows[0]?.total_valet_sales || 0);
+    
+    // Total sales = net sales (fuel) + shop sales + valet sales
+    const grandTotal = totalNetSales + totalShopSales + totalValetSales;
+    
+    console.log('📊 [Backend] Total sales across all sites:', {
+      totalNetSales,
+      totalShopSales,
+      totalValetSales,
+      grandTotal,
+      getAllData
+    });
+    
+    res.json({
+      success: true,
+      data: {
+        totalSales: grandTotal,
+        fuelSales: totalNetSales,
+        shopSales: totalShopSales,
+        valetSales: totalValetSales
+      }
+    });
+  } catch (error) {
+    console.error('❌ [Backend] Error fetching total sales:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching total sales',
+      error: error.message
+    });
+  }
+});
+
 export default router;
 

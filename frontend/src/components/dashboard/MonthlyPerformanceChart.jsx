@@ -462,23 +462,23 @@ const MonthlyPerformanceChartComponent = ({ siteId, year, years, month, months }
   }
 
   return (
-    <div className="chart-card h-[420px] animate-slide-up" style={{ animationDelay: "200ms" }}>
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-            <BarChart3 className="w-5 h-5 text-primary" />
+    <div className="chart-card h-[420px] sm:h-[420px] animate-slide-up overflow-hidden" style={{ animationDelay: "200ms" }}>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-3 sm:gap-0">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+            <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-foreground">Monthly Performance Trends</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">Track your sales performance over time</p>
+            <h3 className="text-base sm:text-lg font-bold text-foreground">Monthly Performance Trends</h3>
+            <p className="text-xs text-muted-foreground mt-0.5 hidden sm:block">Track your sales performance over time</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {/* Custom Multi-Select Metric Selector */}
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setMetricsDropdownOpen(!metricsDropdownOpen)}
-              className="px-3 py-2 text-sm font-semibold rounded-lg border border-border bg-background text-foreground hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-primary min-w-[150px] flex items-center justify-between gap-2"
+              className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold rounded-lg border border-border bg-background text-foreground hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-primary min-w-[120px] sm:min-w-[150px] flex items-center justify-between gap-1 sm:gap-2"
             >
               <span>
                 {selectedMetrics.length === 1 
@@ -492,7 +492,7 @@ const MonthlyPerformanceChartComponent = ({ siteId, year, years, month, months }
             </button>
             
             {metricsDropdownOpen && (
-              <div className="absolute top-full left-0 mt-2 w-[180px] bg-card border border-border rounded-lg shadow-lg z-50 overflow-hidden">
+              <div className="absolute top-full left-0 sm:left-auto sm:right-0 mt-2 w-[180px] sm:w-[200px] bg-card border border-border rounded-lg shadow-lg z-50 overflow-hidden">
                 <div className="p-2 border-b border-border">
                   <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                     Select Metrics
@@ -542,65 +542,69 @@ const MonthlyPerformanceChartComponent = ({ siteId, year, years, month, months }
           </div>
           
           {/* Chart Type Selector */}
-          <div className="flex rounded-lg border border-border overflow-hidden bg-muted/30 p-1">
+          <div className="flex rounded-lg border border-border overflow-hidden bg-muted/30 p-0.5 sm:p-1">
             <button
               onClick={() => setViewType("bar")}
               className={cn(
-                "px-4 py-2 text-sm font-semibold transition-all rounded-md flex items-center gap-2",
+                "px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold transition-all rounded-md flex items-center gap-1 sm:gap-2",
                 viewType === "bar"
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
               )}
             >
-              <BarChart3 className="w-4 h-4" />
-              Bar
+              <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden xs:inline">Bar</span>
             </button>
             <button
               onClick={() => setViewType("line")}
               className={cn(
-                "px-4 py-2 text-sm font-semibold transition-all rounded-md flex items-center gap-2",
+                "px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold transition-all rounded-md flex items-center gap-1 sm:gap-2",
                 viewType === "line"
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
               )}
             >
-              <TrendingUp className="w-4 h-4" />
-              Line
+              <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden xs:inline">Line</span>
             </button>
           </div>
         </div>
       </div>
 
-      <ResponsiveContainer width="100%" height="85%">
-        {viewType === "bar" ? (
-          <BarChart 
-            data={filteredData} 
-            margin={{ top: 10, right: 10, left: 10, bottom: 60 }}
-          >
-            <CartesianGrid 
-              strokeDasharray="3 3" 
-              stroke="hsl(var(--border))" 
-              vertical={false}
-              opacity={0.3}
-            />
-            <XAxis 
-              dataKey="month" 
-              axisLine={false} 
-              tickLine={false}
-              tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11, fontWeight: 500 }}
-              type="category"
-              allowDuplicatedCategory={false}
-              interval={0}
-              angle={-45}
-              textAnchor="end"
-              height={70}
-              tickFormatter={(value) => value}
-              minTickGap={0}
-            />
+      <div className="w-full h-[calc(100%-120px)] sm:h-[85%] overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+        <div className="min-w-[600px] sm:min-w-full">
+          <ResponsiveContainer width="100%" height="100%" minHeight={300}>
+            {viewType === "bar" ? (
+              <BarChart 
+                data={filteredData} 
+                margin={{ top: 10, right: 10, left: 0, bottom: 50 }}
+                barCategoryGap="10%"
+              >
+              <CartesianGrid 
+                strokeDasharray="3 3" 
+                stroke="hsl(var(--border))" 
+                vertical={false}
+                opacity={0.3}
+              />
+              <XAxis 
+                dataKey="month" 
+                axisLine={false} 
+                tickLine={false}
+                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10, fontWeight: 500 }}
+                type="category"
+                allowDuplicatedCategory={false}
+                interval={0}
+                angle={-45}
+                textAnchor="end"
+                height={60}
+                tickFormatter={(value) => value}
+                minTickGap={0}
+              />
             <YAxis 
               axisLine={false} 
               tickLine={false}
-              tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11, fontWeight: 500 }}
+              tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 9, fontWeight: 500 }}
+              width={35}
               domain={[0, 'auto']}
               tickFormatter={(value) => {
                 // Use first selected metric for formatting (or default to Sales)
@@ -664,7 +668,7 @@ const MonthlyPerformanceChartComponent = ({ siteId, year, years, month, months }
         ) : (
           <LineChart 
             data={filteredData}
-            margin={{ top: 10, right: 10, left: 10, bottom: 60 }}
+            margin={{ top: 10, right: 10, left: 0, bottom: 50 }}
           >
             <CartesianGrid 
               strokeDasharray="3 3" 
@@ -676,19 +680,20 @@ const MonthlyPerformanceChartComponent = ({ siteId, year, years, month, months }
               dataKey="month" 
               axisLine={false} 
               tickLine={false}
-              tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11, fontWeight: 500 }}
+              tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10, fontWeight: 500 }}
               type="category"
               interval={0}
               angle={-45}
               textAnchor="end"
-              height={70}
+              height={60}
               tickFormatter={(value) => value}
               minTickGap={0}
             />
             <YAxis 
               axisLine={false} 
               tickLine={false}
-              tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11, fontWeight: 500 }}
+              tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 9, fontWeight: 500 }}
+              width={35}
               tickFormatter={(value) => {
                 // Use first selected metric for formatting (or default to Sales)
                 const primaryMetric = activeMetrics[0] || 'Sales';
@@ -739,7 +744,9 @@ const MonthlyPerformanceChartComponent = ({ siteId, year, years, month, months }
             })}
           </LineChart>
         )}
-      </ResponsiveContainer>
+          </ResponsiveContainer>
+        </div>
+      </div>
     </div>
   );
 };

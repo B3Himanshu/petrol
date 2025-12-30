@@ -8,12 +8,12 @@ import { cn } from "@/lib/utils";
 export const CardDetailModal = ({ open, onOpenChange, title, children }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md bg-card border-border shadow-xl backdrop-blur-sm">
-        <div className="space-y-4">
+      <DialogContent className="max-w-sm max-h-[85vh] overflow-y-auto bg-card border-border shadow-xl backdrop-blur-sm">
+        <div className="space-y-3">
           {title && (
-            <h3 className="text-xl font-semibold text-foreground">{title}</h3>
+            <h3 className="text-lg font-semibold text-foreground">{title}</h3>
           )}
-          <div className="space-y-3">{children}</div>
+          <div className="space-y-2">{children}</div>
         </div>
       </DialogContent>
     </Dialog>
@@ -22,11 +22,11 @@ export const CardDetailModal = ({ open, onOpenChange, title, children }) => {
 
 // Detail item component for breakdown values
 export const DetailItem = ({ label, value, subValue }) => (
-  <div className="p-4 rounded-lg bg-muted/50 border border-border">
-    <p className="text-sm font-medium text-muted-foreground mb-1">{label}</p>
-    <p className="text-2xl font-bold text-foreground">{value}</p>
+  <div className="p-3 rounded-lg bg-muted/50 border border-border">
+    <p className="text-xs font-medium text-muted-foreground mb-1">{label}</p>
+    <p className="text-xl font-bold text-foreground">{value}</p>
     {subValue && (
-      <p className="text-xs text-muted-foreground mt-1">{subValue}</p>
+      <p className="text-xs text-muted-foreground mt-0.5">{subValue}</p>
     )}
   </div>
 );

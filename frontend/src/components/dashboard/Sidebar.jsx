@@ -5,6 +5,7 @@ import {
   LogOut,
   Fuel,
   Menu,
+  X,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -82,7 +83,11 @@ export const Sidebar = ({ isOpen, onToggle }) => {
             className="p-2 rounded-lg hover:bg-sidebar-muted/20 transition-colors"
             title={isOpen ? "Hide Sidebar" : "Show Sidebar"}
           >
-            <Menu className="w-5 h-5 text-sidebar-foreground" />
+            {isOpen ? (
+              <X className="w-5 h-5 text-sidebar-foreground" />
+            ) : (
+              <Menu className="w-5 h-5 text-sidebar-foreground" />
+            )}
           </button>
         </div>
 
@@ -108,7 +113,7 @@ export const Sidebar = ({ isOpen, onToggle }) => {
 
           <NavItem
             icon={<GitCompare className="w-5 h-5" />}
-            label="Comparison"
+            label="Site Comparison"
             path="/comparison"
             active={currentPath === "/comparison"}
           />

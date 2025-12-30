@@ -54,10 +54,9 @@ export const SalesDistributionChart = ({ siteId, month, months, year, years }) =
         
         console.log('📊 [SalesDistributionChart] Received data:', data);
         
-        // Filter out Shop Sales and Valet Sales - only show Fuel Sales
-        // Also filter out any items with zero or very small values
+        // Filter out Valet Sales and any items with zero or very small values
+        // Show Fuel Sales and Shop Sales only
         const filteredData = data.filter(item => 
-          item.name !== "Shop Sales" && 
           item.name !== "Valet Sales" &&
           item.value > 0.01 // Only include items with meaningful values
         );

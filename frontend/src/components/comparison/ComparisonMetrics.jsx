@@ -1,7 +1,83 @@
+import { useState, useEffect, useRef } from "react";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const ComparisonMetrics = ({ site1Data, site2Data, site1Name, site2Name, loading }) => {
+  const [animationProgress, setAnimationProgress] = useState(0);
+  const [hasAnimated, setHasAnimated] = useState(false);
+  const metricsRef = useRef(null);
+
+  // Intersection Observer for scroll-triggered animation
+  useEffect(() => {
+    if (!metricsRef.current || hasAnimated || !site1Data || !site2Data) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !hasAnimated) {
+            setHasAnimated(true);
+            // Start animation
+            let startTime = null;
+            const duration = 1500; // 1.5 seconds
+
+            const animate = (timestamp) => {
+              if (!startTime) startTime = timestamp;
+              const progress = Math.min((timestamp - startTime) / duration, 1);
+              
+              // Easing function for smooth animation (ease-out)
+              const easedProgress = 1 - Math.pow(1 - progress, 3);
+              setAnimationProgress(easedProgress);
+
+              if (progress < 1) {
+                requestAnimationFrame(animate);
+              } else {
+                setAnimationProgress(1);
+              }
+            };
+
+            requestAnimationFrame(animate);
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      {
+        threshold: 0.2, // Trigger when 20% of the component is visible
+        rootMargin: '0px',
+      }
+    );
+
+    observer.observe(metricsRef.current);
+
+    return () => {
+      if (metricsRef.current) {
+        observer.unobserve(metricsRef.current);
+      }
+    };
+  }, [site1Data, site2Data, hasAnimated]);
+
+  // Reset animation when data changes
+  useEffect(() => {
+    setHasAnimated(false);
+    setAnimationProgress(0);
+  }, [site1Data, site2Data]);
+
+  // Format currency
+  const formatCurrency = (amount) => {
+    if (!amount) return "£0";
+    if (amount >= 1000000) return `£${(amount / 1000000).toFixed(2)}M`;
+    if (amount >= 1000) return `£${(amount / 1000).toFixed(1)}k`;
+    return `£${amount.toFixed(0)}`;
+  };
+
+  // Format volume
+  const formatVolume = (liters) => {
+    if (!liters) return "0 L";
+    if (liters >= 1000000) return `${(liters / 1000000).toFixed(1)}M L`;
+    if (liters >= 1000) return `${(liters / 1000).toFixed(0)}K L`;
+    return `${liters.toFixed(0)} L`;
+  };
+
+  // Early returns after all hooks
   if (loading) {
     return (
       <div className="chart-card animate-pulse">
@@ -23,22 +99,6 @@ export const ComparisonMetrics = ({ site1Data, site2Data, site1Name, site2Name, 
       </div>
     );
   }
-
-  // Format currency
-  const formatCurrency = (amount) => {
-    if (!amount) return "£0";
-    if (amount >= 1000000) return `£${(amount / 1000000).toFixed(2)}M`;
-    if (amount >= 1000) return `£${(amount / 1000).toFixed(1)}k`;
-    return `£${amount.toFixed(0)}`;
-  };
-
-  // Format volume
-  const formatVolume = (liters) => {
-    if (!liters) return "0 L";
-    if (liters >= 1000000) return `${(liters / 1000000).toFixed(1)}M L`;
-    if (liters >= 1000) return `${(liters / 1000).toFixed(0)}K L`;
-    return `${liters.toFixed(0)} L`;
-  };
 
   // Calculate percentage difference
   const calculateDifference = (val1, val2) => {
@@ -92,7 +152,7 @@ export const ComparisonMetrics = ({ site1Data, site2Data, site1Name, site2Name, 
   ];
 
   return (
-    <div className="chart-card animate-slide-up">
+    <div ref={metricsRef} className="chart-card animate-slide-up">
       <div className="mb-6">
         <h3 className="text-lg font-semibold text-foreground mb-1">Performance Comparison</h3>
         <p className="text-xs text-muted-foreground">Side-by-side comparison of key metrics</p>
@@ -101,6 +161,11 @@ export const ComparisonMetrics = ({ site1Data, site2Data, site1Name, site2Name, 
       <div className="space-y-4">
         {metrics.map((metric, index) => {
           const diff = calculateDifference(metric.site1Value, metric.site2Value);
+          
+          // Animate values
+          const animatedSite1Value = (metric.site1Value || 0) * animationProgress;
+          const animatedSite2Value = (metric.site2Value || 0) * animationProgress;
+          const animatedDiff = calculateDifference(animatedSite1Value, animatedSite2Value);
           
           return (
             <div
@@ -116,7 +181,9 @@ export const ComparisonMetrics = ({ site1Data, site2Data, site1Name, site2Name, 
               <div className="text-center">
                 <p className="text-xs text-muted-foreground mb-1">{site1Name}</p>
                 <p className="text-lg font-semibold text-foreground">
-                  {metric.formatter(metric.site1Value)}
+                  {hasAnimated && animationProgress < 1 
+                    ? metric.formatter(animatedSite1Value)
+                    : metric.formatter(metric.site1Value)}
                 </p>
               </div>
 
@@ -125,24 +192,26 @@ export const ComparisonMetrics = ({ site1Data, site2Data, site1Name, site2Name, 
                 <p className="text-xs text-muted-foreground mb-1">{site2Name}</p>
                 <div className="flex items-center justify-center gap-2">
                   <p className="text-lg font-semibold text-foreground">
-                    {metric.formatter(metric.site2Value)}
+                    {hasAnimated && animationProgress < 1 
+                      ? metric.formatter(animatedSite2Value)
+                      : metric.formatter(metric.site2Value)}
                   </p>
-                  {diff.percentage > 0 && (
+                  {animatedDiff.percentage > 0 && (
                     <div className={cn(
                       "flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium",
-                      diff.isPositive
+                      animatedDiff.isPositive
                         ? "bg-green-500/10 text-green-600 dark:text-green-400"
                         : "bg-red-500/10 text-red-600 dark:text-red-400"
                     )}>
-                      {diff.isPositive ? (
+                      {animatedDiff.isPositive ? (
                         <TrendingUp className="w-3 h-3" />
                       ) : (
                         <TrendingDown className="w-3 h-3" />
                       )}
-                      <span>{diff.percentage.toFixed(1)}%</span>
+                      <span>{animatedDiff.percentage.toFixed(1)}%</span>
                     </div>
                   )}
-                  {diff.percentage === 0 && (
+                  {animatedDiff.percentage === 0 && (
                     <div className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-muted text-muted-foreground">
                       <Minus className="w-3 h-3" />
                       <span>Same</span>
@@ -162,13 +231,17 @@ export const ComparisonMetrics = ({ site1Data, site2Data, site1Name, site2Name, 
           <div>
             <p className="text-muted-foreground mb-1">Total Sales Difference</p>
             <p className="font-semibold text-foreground">
-              {formatCurrency(Math.abs(site1Data.netSales - site2Data.netSales))}
+              {hasAnimated && animationProgress < 1
+                ? formatCurrency(Math.abs((site1Data.netSales - site2Data.netSales) * animationProgress))
+                : formatCurrency(Math.abs(site1Data.netSales - site2Data.netSales))}
             </p>
           </div>
           <div>
             <p className="text-muted-foreground mb-1">Profit Difference</p>
             <p className="font-semibold text-foreground">
-              {formatCurrency(Math.abs(site1Data.profit - site2Data.profit))}
+              {hasAnimated && animationProgress < 1
+                ? formatCurrency(Math.abs((site1Data.profit - site2Data.profit) * animationProgress))
+                : formatCurrency(Math.abs(site1Data.profit - site2Data.profit))}
             </p>
           </div>
         </div>

@@ -11,7 +11,7 @@ const __dirname = path.dirname(__filename);
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
-    host: "::",
+    host: "0.0.0.0", // Allow access from network (for sharing localhost)
     port: 8080,
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
