@@ -16,11 +16,11 @@ const expectedPostcodes = {
   10: 'TR16 6HT',  // Lanner Moor Garage
   11: 'LU5 4LW',   // Luton Road SS
   14: 'PE19 1JZ',  // Kings Lane SS
-  17: 'PE7 1RQ',   // Delph SS
+  17: 'PE7 1RO',   // Delph SS
   18: 'PE7 1NJ',   // Saxon Autopoint SS
-  19: 'IP31 2BZ',  // Jubits Lane SS
-  20: 'WA9 4RX',   // Worsley Brow
-  23: 'B74 2DN',   // Auto Pitstop (from document, but API shows B74 2DN - need to verify)
+  19: 'WA9 4RX',   // Jubits Lane SS
+  20: 'WA9 3EZ',   // Worsley Brow
+  23: 'PE13 4AA',  // Auto Pitstop
   24: 'HD6 1QH',   // Crown SS
   25: 'OL8 1SY',   // Marsland SS
   29: 'WA5 7TY',   // Gemini SS
