@@ -97,36 +97,40 @@ pool.on('error', (err) => {
 // Helper function to execute queries
 export const query = async (text, params) => {
   const start = Date.now();
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  
   try {
-    console.log('🗄️ [Database] Executing query:', {
-      query: text.substring(0, 200) + (text.length > 200 ? '...' : ''),
-      fullQuery: text,
-      params: params,
-      paramCount: params?.length || 0,
-      timestamp: new Date().toISOString()
-    });
+    // Only log query details in development mode
+    if (isDevelopment) {
+      console.log('🗄️ [Database] Executing query:', {
+        query: text.substring(0, 200) + (text.length > 200 ? '...' : ''),
+        paramCount: params?.length || 0,
+        timestamp: new Date().toISOString()
+      });
+    }
     
     const res = await pool.query(text, params);
     const duration = Date.now() - start;
     
-    console.log('✅ [Database] Query executed successfully:', {
-      duration: `${duration}ms`,
-      rowCount: res.rowCount,
-      hasData: res.rows.length > 0,
-      sampleData: res.rows.length > 0 ? res.rows[0] : null,
-      allRows: res.rows.length <= 5 ? res.rows : `${res.rows.length} rows (showing first 5)`,
-      timestamp: new Date().toISOString()
-    });
+    // Only log detailed results in development mode
+    if (isDevelopment) {
+      console.log('✅ [Database] Query executed successfully:', {
+        duration: `${duration}ms`,
+        rowCount: res.rowCount,
+        hasData: res.rows.length > 0,
+        timestamp: new Date().toISOString()
+      });
+    }
     
     return res;
   } catch (error) {
+    // Always log errors, but sanitize sensitive information
     console.error('❌ [Database] Query error:', {
       error: error.message,
       code: error.code,
       detail: error.detail,
       hint: error.hint,
-      query: text.substring(0, 200) + (text.length > 200 ? '...' : ''),
-      params: params,
+      query: isDevelopment ? (text.substring(0, 200) + (text.length > 200 ? '...' : '')) : '[Query hidden in production]',
       timestamp: new Date().toISOString()
     });
     throw error;

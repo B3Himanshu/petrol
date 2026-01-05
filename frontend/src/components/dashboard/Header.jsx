@@ -57,7 +57,7 @@ export const Header = ({ sidebarOpen, onToggleSidebar, totalSales }) => {
         <div className="flex items-center gap-2 sm:gap-3 pl-1.5 sm:pl-2 lg:pl-4 border-l border-border">
           <div className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 rounded-full bg-gradient-to-br from-primary to-chart-blue flex items-center justify-center">
             <span className="text-xs sm:text-xs lg:text-sm font-bold text-primary-foreground">
-              JD
+              PRL
             </span>
           </div>
         </div>

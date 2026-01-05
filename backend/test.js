@@ -21,28 +21,53 @@ async function analyzeCompleteDatabase() {
     console.log('🔍 Starting Complete Database Structure Analysis...\n');
     console.log('📊 Database Connection Info:');
     
+    // Sanitize connection info - only show non-sensitive details
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    
     // Parse connection info from DATABASE_URL if present
     if (process.env.DATABASE_URL) {
       try {
         const url = new URL(process.env.DATABASE_URL);
         console.log(`   Connection: DATABASE_URL (connection string)`);
-        console.log(`   Host: ${url.hostname}`);
-        console.log(`   Port: ${url.port || 5432}`);
-        console.log(`   Database: ${url.pathname.replace('/', '')}`);
-        console.log(`   User: ${url.username || 'N/A'}`);
+        // Only show hostname in development, mask in production
+        if (isDevelopment) {
+          console.log(`   Host: ${url.hostname}`);
+          console.log(`   Port: ${url.port || 5432}`);
+          console.log(`   Database: ${url.pathname.replace('/', '')}`);
+          console.log(`   User: ${url.username || 'N/A'}`);
+        } else {
+          console.log(`   Host: [REDACTED]`);
+          console.log(`   Port: ${url.port || 5432}`);
+          console.log(`   Database: [REDACTED]`);
+          console.log(`   User: [REDACTED]`);
+        }
         console.log(`   SSL: ${url.searchParams.get('sslmode') || 'not specified'}\n`);
       } catch (e) {
         console.log(`   Connection: DATABASE_URL (could not parse)`);
-        console.log(`   Host: ${process.env.DB_HOST || 'from DATABASE_URL'}`);
-        console.log(`   Port: ${process.env.DB_PORT || 5432}`);
-        console.log(`   Database: ${process.env.DB_NAME || 'from DATABASE_URL'}`);
-        console.log(`   User: ${process.env.DB_USER || 'from DATABASE_URL'}\n`);
+        if (isDevelopment) {
+          console.log(`   Host: ${process.env.DB_HOST || 'from DATABASE_URL'}`);
+          console.log(`   Port: ${process.env.DB_PORT || 5432}`);
+          console.log(`   Database: ${process.env.DB_NAME || 'from DATABASE_URL'}`);
+          console.log(`   User: ${process.env.DB_USER || 'from DATABASE_URL'}\n`);
+        } else {
+          console.log(`   Host: [REDACTED]`);
+          console.log(`   Port: ${process.env.DB_PORT || 5432}`);
+          console.log(`   Database: [REDACTED]`);
+          console.log(`   User: [REDACTED]\n`);
+        }
       }
     } else {
-      console.log(`   Host: ${process.env.DB_HOST || 'localhost'}`);
-      console.log(`   Port: ${process.env.DB_PORT || 5432}`);
-      console.log(`   Database: ${process.env.DB_NAME || 'petroleum_db'}`);
-      console.log(`   User: ${process.env.DB_USER || 'N/A'}\n`);
+      if (isDevelopment) {
+        console.log(`   Host: ${process.env.DB_HOST || 'localhost'}`);
+        console.log(`   Port: ${process.env.DB_PORT || 5432}`);
+        console.log(`   Database: ${process.env.DB_NAME || 'petroleum_db'}`);
+        console.log(`   User: ${process.env.DB_USER || 'N/A'}\n`);
+      } else {
+        console.log(`   Host: [REDACTED]`);
+        console.log(`   Port: ${process.env.DB_PORT || 5432}`);
+        console.log(`   Database: [REDACTED]`);
+        console.log(`   User: [REDACTED]\n`);
+      }
     }
 
     // Connect to database

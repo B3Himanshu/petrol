@@ -2,10 +2,10 @@ import {
   LayoutDashboard,
   GitCompare,
   BarChart3,
-  LogOut,
   Fuel,
   Menu,
   X,
+  Building2,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -70,13 +70,14 @@ export const Sidebar = ({ isOpen, onToggle }) => {
       >
         {/* Logo and Hamburger Button - Fixed at top */}
         <div className="flex-shrink-0 p-6 flex items-center justify-between">
-          <div className="flex items-center">
-            {/* Credentia Logo */}
-            <img
-              src="/logo_image.png"
-              alt="Credentia"
-              className="h-12 w-auto object-contain"
-            />
+          <div className="flex items-center gap-2.5">
+            {/* Platinum Retail Limited Logo */}
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center">
+              <Building2 className="w-6 h-6 text-sidebar-foreground" />
+            </div>
+            <span className="text-xl font-bold text-sidebar-foreground">
+              Platinum Retail Limited
+            </span>
           </div>
           <button
             onClick={onToggle}
@@ -118,11 +119,6 @@ export const Sidebar = ({ isOpen, onToggle }) => {
             active={currentPath === "/comparison"}
           />
         </nav>
-
-        {/* Logout - Fixed at bottom */}
-        <div className="flex-shrink-0 p-4 border-t border-sidebar-muted/20">
-          <NavItem icon={<LogOut className="w-5 h-5" />} label="Log Out" />
-        </div>
       </aside>
     </>
   );
