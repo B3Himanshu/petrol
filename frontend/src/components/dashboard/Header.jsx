@@ -19,43 +19,44 @@ export const Header = ({ sidebarOpen, onToggleSidebar, totalSales }) => {
   const salesFormatted = formatTotalSales(totalSales || 0);
 
   return (
-    <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 lg:px-6">
+    <header className="h-14 sm:h-16 bg-card border-b border-border flex items-center justify-between px-3 sm:px-4 lg:px-6">
       {/* Spacer for layout */}
       <div className="flex-1" />
 
       {/* Actions */}
-      <div className="flex items-center gap-2 lg:gap-4">
-        {/* Total Sales - Yellow Button Style */}
-        <div className="hidden lg:flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold shadow-sm" style={{ backgroundColor: '#FFA500', color: '#000000' }}>
-          <span className="text-sm font-semibold text-black">Total Sales:</span>
-          <div className="flex items-baseline gap-1">
-            <span className="text-sm font-medium text-black/70">£</span>
-            <span className="text-base font-bold text-black">{salesFormatted.number}</span>
-            {salesFormatted.unit && <span className="text-sm font-semibold" style={{ color: '#4A90E2' }}>{salesFormatted.unit}</span>}
+      <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-4">
+        {/* Total Sales - Blue Button Style - Show on mobile too */}
+        <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 lg:py-2.5 rounded-lg font-semibold shadow-sm bg-primary text-primary-foreground">
+          <span className="text-xs sm:text-sm font-semibold hidden sm:inline">Total Sales:</span>
+          <span className="text-xs sm:text-sm font-semibold sm:hidden">Sales:</span>
+          <div className="flex items-baseline gap-0.5 sm:gap-1">
+            <span className="text-xs sm:text-sm font-medium opacity-90">£</span>
+            <span className="text-sm sm:text-base font-bold">{salesFormatted.number}</span>
+            {salesFormatted.unit && <span className="text-xs sm:text-sm font-semibold opacity-90">{salesFormatted.unit}</span>}
           </div>
         </div>
 
         {/* Dark Mode Toggle */}
         <button
           onClick={toggleTheme}
-          className="p-2 rounded-lg hover:bg-muted transition-colors"
+          className="p-1.5 sm:p-2 rounded-lg hover:bg-muted transition-colors"
           title={theme === "light" ? "Switch to Dark Mode" : "Switch to Light Mode"}
         >
           {theme === "light" ? (
-            <Moon className="w-5 h-5 text-muted-foreground" />
+            <Moon className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
           ) : (
-            <Sun className="w-5 h-5 text-yellow-500" />
+            <Sun className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
           )}
         </button>
 
-        <button className="relative p-2 rounded-full hover:bg-muted transition-colors">
-          <Bell className="w-5 h-5 text-muted-foreground" />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
+        <button className="relative p-1.5 sm:p-2 rounded-full hover:bg-muted transition-colors">
+          <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
+          <span className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-destructive rounded-full" />
         </button>
 
-        <div className="flex items-center gap-3 pl-2 lg:pl-4 border-l border-border">
-          <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-gradient-to-br from-primary to-chart-orange flex items-center justify-center">
-            <span className="text-xs lg:text-sm font-bold text-primary-foreground">
+        <div className="flex items-center gap-2 sm:gap-3 pl-1.5 sm:pl-2 lg:pl-4 border-l border-border">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 rounded-full bg-gradient-to-br from-primary to-chart-blue flex items-center justify-center">
+            <span className="text-xs sm:text-xs lg:text-sm font-bold text-primary-foreground">
               JD
             </span>
           </div>

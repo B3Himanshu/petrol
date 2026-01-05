@@ -30,32 +30,37 @@ const avgPPI = 84;
 
 export const PPIChart = () => {
   return (
-    <div className="chart-card h-[380px] animate-slide-up" style={{ animationDelay: "400ms" }}>
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h3 className="text-lg font-semibold text-foreground">Avg PPI vs Actual PPI (Line chart)</h3>
-          <p className="text-sm text-muted-foreground">This chart has filter button.</p>
+    <div className="chart-card h-[320px] sm:h-[360px] lg:h-[380px] animate-slide-up" style={{ animationDelay: "400ms" }}>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 gap-2 sm:gap-0">
+        <div className="flex-1 min-w-0">
+          <h3 className="text-base sm:text-lg font-semibold text-foreground">Avg PPI vs Actual PPI (Line chart)</h3>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">This chart has filter button.</p>
         </div>
-        <button className="flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground border border-border rounded-lg transition-colors">
+        <button className="flex items-center justify-center gap-2 px-3 py-2 sm:py-1.5 text-xs sm:text-sm text-muted-foreground hover:text-foreground border border-border rounded-lg transition-colors touch-manipulation min-h-[36px] sm:min-h-0">
           <Filter className="w-4 h-4" />
-          Filter
+          <span className="hidden sm:inline">Filter</span>
         </button>
       </div>
 
-      <ResponsiveContainer width="100%" height="85%">
-        <LineChart data={data}>
+      <div className="h-[calc(100%-100px)] sm:h-[85%]">
+        <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data} margin={{ top: 5, right: 5, left: -10, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
           <XAxis 
             dataKey="month" 
             axisLine={false} 
             tickLine={false}
-            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+            className="sm:text-xs lg:text-sm"
+            interval="preserveStartEnd"
           />
           <YAxis 
             domain={[70, 100]}
             axisLine={false} 
             tickLine={false}
-            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+            className="sm:text-xs lg:text-sm"
+            width={40}
           />
           <Tooltip
             contentStyle={{
@@ -63,12 +68,18 @@ export const PPIChart = () => {
               border: "1px solid hsl(var(--border))",
               borderRadius: "8px",
               boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+              fontSize: "12px",
+              padding: "8px",
+              maxWidth: "180px",
             }}
+            wrapperStyle={{ zIndex: 1000 }}
           />
           <Legend 
-            wrapperStyle={{ paddingTop: "10px" }}
+            wrapperStyle={{ paddingTop: "8px", fontSize: "11px" }}
+            className="text-xs sm:text-sm"
+            iconSize={12}
             formatter={(value) => (
-              <span className="text-sm text-muted-foreground">
+              <span className="text-xs sm:text-sm text-muted-foreground">
                 {value === "actualPPI" ? "Actual PPI" : "Avg PPI"}
               </span>
             )}
@@ -78,18 +89,19 @@ export const PPIChart = () => {
             stroke="hsl(var(--chart-purple))" 
             strokeDasharray="5 5"
             strokeWidth={2}
-            label={{ value: "Avg PPI", fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+            label={{ value: "Avg PPI", fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
           />
           <Line 
             type="monotone" 
             dataKey="actualPPI" 
             stroke="hsl(var(--chart-blue))" 
             strokeWidth={2} 
-            dot={{ r: 4, fill: "hsl(var(--chart-blue))" }}
-            activeDot={{ r: 6 }}
+            dot={{ r: 3, fill: "hsl(var(--chart-blue))" }}
+            activeDot={{ r: 5 }}
           />
         </LineChart>
-      </ResponsiveContainer>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 };

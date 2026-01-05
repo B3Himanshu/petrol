@@ -213,7 +213,7 @@ const createCustomTooltip = (chartData, selectedMetrics) => {
 const MonthlyPerformanceChartComponent = ({ siteId, year, years, month, months }) => {
   // JSX version: no TypeScript generic on useState
   const [viewType, setViewType] = useState("bar");
-  const [selectedMetrics, setSelectedMetrics] = useState(["Sales"]); // Array of selected metrics
+  const [selectedMetrics, setSelectedMetrics] = useState(["Sales", "Profit", "Sale Volume", "PPL"]); // Array of selected metrics - all 4 selected by default
   const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [metricsDropdownOpen, setMetricsDropdownOpen] = useState(false);
@@ -443,9 +443,9 @@ const MonthlyPerformanceChartComponent = ({ siteId, year, years, month, months }
 
   if (loading) {
     return (
-      <div className="chart-card h-[420px] animate-slide-up" style={{ animationDelay: "200ms" }}>
-        <div className="flex items-center justify-center h-full">
-          <div className="text-muted-foreground">Loading chart data...</div>
+      <div className="chart-card min-h-[450px] sm:min-h-[420px] h-auto sm:h-[420px] animate-slide-up" style={{ animationDelay: "200ms" }}>
+        <div className="flex items-center justify-center min-h-[350px] sm:h-full">
+          <div className="text-muted-foreground text-sm sm:text-base">Loading chart data...</div>
         </div>
       </div>
     );
@@ -453,17 +453,17 @@ const MonthlyPerformanceChartComponent = ({ siteId, year, years, month, months }
 
   if (!chartData || chartData.length === 0) {
     return (
-      <div className="chart-card h-[420px] animate-slide-up" style={{ animationDelay: "200ms" }}>
-        <div className="flex items-center justify-center h-full">
-          <div className="text-muted-foreground">No data available</div>
+      <div className="chart-card min-h-[450px] sm:min-h-[420px] h-auto sm:h-[420px] animate-slide-up" style={{ animationDelay: "200ms" }}>
+        <div className="flex items-center justify-center min-h-[350px] sm:h-full">
+          <div className="text-muted-foreground text-sm sm:text-base">No data available</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="chart-card h-[420px] sm:h-[420px] animate-slide-up overflow-hidden" style={{ animationDelay: "200ms" }}>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-3 sm:gap-0">
+    <div className="chart-card min-h-[450px] sm:min-h-[420px] h-auto sm:h-[420px] animate-slide-up overflow-hidden" style={{ animationDelay: "200ms" }}>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 lg:mb-6 gap-3 sm:gap-0">
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/10 flex items-center justify-center">
             <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
@@ -571,13 +571,13 @@ const MonthlyPerformanceChartComponent = ({ siteId, year, years, month, months }
         </div>
       </div>
 
-      <div className="w-full h-[calc(100%-120px)] sm:h-[85%] overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+      <div className="w-full h-[320px] sm:h-[calc(100%-120px)] lg:h-[85%] overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
         <div className="min-w-[600px] sm:min-w-full">
-          <ResponsiveContainer width="100%" height="100%" minHeight={300}>
+          <ResponsiveContainer width="100%" height="100%" minHeight={280}>
             {viewType === "bar" ? (
               <BarChart 
                 data={filteredData} 
-                margin={{ top: 10, right: 10, left: 0, bottom: 50 }}
+                margin={{ top: 10, right: 5, left: -5, bottom: 40 }}
                 barCategoryGap="10%"
               >
               <CartesianGrid 
@@ -590,21 +590,23 @@ const MonthlyPerformanceChartComponent = ({ siteId, year, years, month, months }
                 dataKey="month" 
                 axisLine={false} 
                 tickLine={false}
-                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10, fontWeight: 500 }}
+                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 9, fontWeight: 500 }}
+                className="sm:text-xs lg:text-sm"
                 type="category"
                 allowDuplicatedCategory={false}
                 interval={0}
                 angle={-45}
                 textAnchor="end"
-                height={60}
+                height={50}
                 tickFormatter={(value) => value}
                 minTickGap={0}
               />
             <YAxis 
               axisLine={false} 
               tickLine={false}
-              tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 9, fontWeight: 500 }}
-              width={35}
+              tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 8, fontWeight: 500 }}
+              className="sm:text-xs lg:text-sm"
+              width={30}
               domain={[0, 'auto']}
               tickFormatter={(value) => {
                 // Use first selected metric for formatting (or default to Sales)
@@ -638,13 +640,15 @@ const MonthlyPerformanceChartComponent = ({ siteId, year, years, month, months }
                 backgroundColor: 'transparent',
                 border: 'none',
                 padding: 0,
+                fontSize: '11px',
               }}
             />
             <Legend 
-              wrapperStyle={{ paddingTop: "15px" }}
+              wrapperStyle={{ paddingTop: "10px", fontSize: "10px" }}
               iconType="circle"
+              iconSize={10}
               formatter={(value) => (
-                <span className="text-sm font-medium capitalize text-foreground">{value}</span>
+                <span className="text-xs sm:text-sm font-medium capitalize text-foreground">{value}</span>
               )}
             />
             {activeMetrics.map((metric, index) => {
@@ -668,7 +672,7 @@ const MonthlyPerformanceChartComponent = ({ siteId, year, years, month, months }
         ) : (
           <LineChart 
             data={filteredData}
-            margin={{ top: 10, right: 10, left: 0, bottom: 50 }}
+            margin={{ top: 10, right: 5, left: -5, bottom: 40 }}
           >
             <CartesianGrid 
               strokeDasharray="3 3" 
@@ -680,20 +684,22 @@ const MonthlyPerformanceChartComponent = ({ siteId, year, years, month, months }
               dataKey="month" 
               axisLine={false} 
               tickLine={false}
-              tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10, fontWeight: 500 }}
+              tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 9, fontWeight: 500 }}
+              className="sm:text-xs lg:text-sm"
               type="category"
               interval={0}
               angle={-45}
               textAnchor="end"
-              height={60}
+              height={50}
               tickFormatter={(value) => value}
               minTickGap={0}
             />
             <YAxis 
               axisLine={false} 
               tickLine={false}
-              tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 9, fontWeight: 500 }}
-              width={35}
+              tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 8, fontWeight: 500 }}
+              className="sm:text-xs lg:text-sm"
+              width={30}
               tickFormatter={(value) => {
                 // Use first selected metric for formatting (or default to Sales)
                 const primaryMetric = activeMetrics[0] || 'Sales';
@@ -715,10 +721,11 @@ const MonthlyPerformanceChartComponent = ({ siteId, year, years, month, months }
               content={tooltipComponent}
             />
             <Legend 
-              wrapperStyle={{ paddingTop: "15px" }}
+              wrapperStyle={{ paddingTop: "10px", fontSize: "10px" }}
               iconType="circle"
+              iconSize={10}
               formatter={(value) => (
-                <span className="text-sm font-medium capitalize text-foreground">{value}</span>
+                <span className="text-xs sm:text-sm font-medium capitalize text-foreground">{value}</span>
               )}
             />
             {activeMetrics.map((metric, index) => {

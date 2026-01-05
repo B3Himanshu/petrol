@@ -64,9 +64,9 @@ export const BunkeredSalesChart = ({ siteId, month, months, year, years }) => {
   }, [siteId, month, months, year, years]);
   if (loading) {
     return (
-      <div className="chart-card h-[380px] animate-slide-up" style={{ animationDelay: "350ms" }}>
+      <div className="chart-card h-[320px] sm:h-[360px] lg:h-[380px] animate-slide-up" style={{ animationDelay: "350ms" }}>
         <div className="flex items-center justify-center h-full">
-          <div className="text-muted-foreground">Loading chart data...</div>
+          <div className="text-muted-foreground text-sm sm:text-base">Loading chart data...</div>
         </div>
       </div>
     );
@@ -74,38 +74,47 @@ export const BunkeredSalesChart = ({ siteId, month, months, year, years }) => {
 
   if (!chartData || chartData.length === 0) {
     return (
-      <div className="chart-card h-[380px] animate-slide-up" style={{ animationDelay: "350ms" }}>
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold text-foreground">Sales Data (Bar-graph)</h3>
-          <p className="text-sm text-muted-foreground">Comparing Bunkered vs Non-Bunkered sales</p>
+      <div className="chart-card h-[320px] sm:h-[360px] lg:h-[380px] animate-slide-up" style={{ animationDelay: "350ms" }}>
+        <div className="mb-3 sm:mb-4">
+          <h3 className="text-base sm:text-lg font-semibold text-foreground">Sales Data (Bar-graph)</h3>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">Comparing Bunkered vs Non-Bunkered sales</p>
         </div>
-        <div className="flex items-center justify-center h-[85%]">
-          <div className="text-muted-foreground">No data available</div>
+        <div className="flex items-center justify-center h-[calc(100%-80px)] sm:h-[85%]">
+          <div className="text-muted-foreground text-sm sm:text-base">No data available</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="chart-card h-[380px] animate-slide-up" style={{ animationDelay: "350ms" }}>
-      <div className="mb-4">
-        <h3 className="text-lg font-semibold text-foreground">Sales Data (Bar-graph)</h3>
-        <p className="text-sm text-muted-foreground">Comparing Bunkered vs Non-Bunkered sales</p>
+    <div className="chart-card h-[320px] sm:h-[360px] lg:h-[380px] animate-slide-up" style={{ animationDelay: "350ms" }}>
+      <div className="mb-3 sm:mb-4">
+        <h3 className="text-base sm:text-lg font-semibold text-foreground">Sales Data (Bar-graph)</h3>
+        <p className="text-xs sm:text-sm text-muted-foreground mt-1">Comparing Bunkered vs Non-Bunkered sales</p>
       </div>
 
-      <ResponsiveContainer width="100%" height="85%">
-        <BarChart data={chartData} barGap={4} barCategoryGap="25%">
+      <div className="h-[calc(100%-80px)] sm:h-[85%]">
+        <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={chartData} barGap={4} barCategoryGap="25%" margin={{ top: 5, right: 5, left: -10, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
           <XAxis 
             dataKey="month" 
             axisLine={false} 
             tickLine={false}
-            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+            className="sm:text-xs lg:text-sm"
           />
           <YAxis 
             axisLine={false} 
             tickLine={false}
-            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+            className="sm:text-xs lg:text-sm"
+            width={50}
+            tickFormatter={(value) => {
+              if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+              if (value >= 1000) return `${(value / 1000).toFixed(0)}k`;
+              return value.toString();
+            }}
           />
           <Tooltip
             contentStyle={{
@@ -113,20 +122,27 @@ export const BunkeredSalesChart = ({ siteId, month, months, year, years }) => {
               border: "1px solid hsl(var(--border))",
               borderRadius: "8px",
               boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+              fontSize: "12px",
+              padding: "8px",
+              maxWidth: "200px",
             }}
             formatter={(value, name) => {
+              const formattedValue = `£${value.toLocaleString()}`;
               if (name === "bunkered") {
-                return [`Bunkered: £${value.toLocaleString()}`, "Bunkered Sales"];
+                return [formattedValue, "Bunkered Sales"];
               } else if (name === "nonBunkered") {
-                return [`Non-Bunkered: £${value.toLocaleString()}`, "Non-Bunkered Sales"];
+                return [formattedValue, "Non-Bunkered Sales"];
               }
-              return [`£${value.toLocaleString()}`, name];
+              return [formattedValue, name];
             }}
+            wrapperStyle={{ zIndex: 1000 }}
           />
           <Legend 
-            wrapperStyle={{ paddingTop: "10px" }}
+            wrapperStyle={{ paddingTop: "8px", fontSize: "11px" }}
+            className="text-xs sm:text-sm"
+            iconSize={12}
             formatter={(value) => (
-              <span className="text-sm text-muted-foreground">
+              <span className="text-xs sm:text-sm text-muted-foreground">
                 {value === "bunkered" ? "Bunkered" : "Non-Bunkered"}
               </span>
             )}
@@ -134,7 +150,8 @@ export const BunkeredSalesChart = ({ siteId, month, months, year, years }) => {
           <Bar dataKey="bunkered" fill="hsl(var(--chart-blue))" radius={[4, 4, 0, 0]} />
           <Bar dataKey="nonBunkered" fill="hsl(var(--chart-green))" radius={[4, 4, 0, 0]} />
         </BarChart>
-      </ResponsiveContainer>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 };

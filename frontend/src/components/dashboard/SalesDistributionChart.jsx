@@ -18,7 +18,19 @@ export const SalesDistributionChart = ({ siteId, month, months, year, years }) =
   const [loading, setLoading] = useState(false);
   const [animationProgress, setAnimationProgress] = useState(0);
   const [hasAnimated, setHasAnimated] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const chartRef = useRef(null);
+
+  // Detect screen size for responsive layout
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 640); // sm breakpoint
+    };
+    
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   useEffect(() => {
     if (!siteId || siteId === 'all') {
@@ -190,7 +202,7 @@ export const SalesDistributionChart = ({ siteId, month, months, year, years }) =
         labels: labels,
         values: values,
         type: 'pie',
-        hole: 0.5, // Slightly larger hole for better center text visibility
+        hole: isMobile ? 0.55 : 0.5, // Slightly larger hole on mobile for better center text visibility
         marker: {
           colors: colors,
           line: {
@@ -201,7 +213,7 @@ export const SalesDistributionChart = ({ siteId, month, months, year, years }) =
         textinfo: 'percent',
         textposition: 'inside',
         textfont: {
-          size: 13,
+          size: isMobile ? 11 : 13,
           color: '#ffffff',
           family: 'Arial, sans-serif',
         },
@@ -226,7 +238,7 @@ export const SalesDistributionChart = ({ siteId, month, months, year, years }) =
             yref: 'paper',
             showarrow: false,
             font: {
-              size: 13,
+              size: isMobile ? 11 : 13,
               color: 'hsl(var(--muted-foreground))',
               family: 'Arial, sans-serif',
             },
@@ -239,7 +251,7 @@ export const SalesDistributionChart = ({ siteId, month, months, year, years }) =
             yref: 'paper',
             showarrow: false,
             font: {
-              size: 24,
+              size: isMobile ? 18 : 24,
               color: 'hsl(var(--foreground))',
               family: 'Arial, sans-serif',
             },
@@ -252,13 +264,18 @@ export const SalesDistributionChart = ({ siteId, month, months, year, years }) =
           color: 'hsl(var(--foreground))',
           family: 'Arial, sans-serif',
         },
-        margin: { l: 20, r: 20, t: 20, b: 20 },
+        margin: { 
+          l: isMobile ? 10 : 20, 
+          r: isMobile ? 10 : 20, 
+          t: isMobile ? 10 : 20, 
+          b: isMobile ? 10 : 20 
+        },
         hoverlabel: {
           bgcolor: 'rgba(0, 0, 0, 0.85)',
           bordercolor: 'rgba(255, 255, 255, 0.3)',
           font: {
             color: '#ffffff',
-            size: 13,
+            size: isMobile ? 11 : 13,
             family: 'Arial, sans-serif',
           },
           namelength: -1,
@@ -272,13 +289,13 @@ export const SalesDistributionChart = ({ siteId, month, months, year, years }) =
         modeBarButtonsToRemove: ['pan2d', 'lasso2d'],
       },
     };
-  }, [chartData, total, animationProgress]);
+  }, [chartData, total, animationProgress, isMobile]);
   // Early returns after all hooks
   if (loading) {
     return (
-      <div className="chart-card h-[450px] animate-slide-up" style={{ animationDelay: "600ms" }}>
-        <div className="flex items-center justify-center h-full">
-          <div className="text-muted-foreground">Loading chart data...</div>
+      <div className="chart-card min-h-[600px] sm:min-h-[380px] lg:min-h-[450px] h-auto sm:h-[380px] lg:h-[450px] animate-slide-up" style={{ animationDelay: "600ms" }}>
+        <div className="flex items-center justify-center h-full min-h-[400px]">
+          <div className="text-muted-foreground text-sm sm:text-base">Loading chart data...</div>
         </div>
       </div>
     );
@@ -286,73 +303,97 @@ export const SalesDistributionChart = ({ siteId, month, months, year, years }) =
 
   if (!chartData || chartData.length === 0) {
     return (
-      <div className="chart-card h-[450px] animate-slide-up" style={{ animationDelay: "600ms" }}>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-primary" />
+      <div className="chart-card min-h-[600px] sm:min-h-[380px] lg:min-h-[450px] h-auto sm:h-[380px] lg:h-[450px] animate-slide-up" style={{ animationDelay: "600ms" }}>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 gap-2 sm:gap-0">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-foreground">Sales Distribution</h3>
+              <h3 className="text-base sm:text-lg font-bold text-foreground">Sales Distribution</h3>
               <p className="text-xs text-muted-foreground mt-0.5">Sales breakdown by category</p>
             </div>
           </div>
         </div>
-        <div className="flex items-center justify-center h-[320px]">
-          <div className="text-muted-foreground">No data available</div>
+        <div className="flex items-center justify-center min-h-[400px] sm:h-[320px]">
+          <div className="text-muted-foreground text-sm sm:text-base">No data available</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="chart-card h-[450px] animate-slide-up" style={{ animationDelay: "600ms" }}>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-            <TrendingUp className="w-5 h-5 text-primary" />
+    <div className="chart-card min-h-[600px] sm:min-h-[380px] lg:min-h-[450px] h-auto sm:h-[380px] lg:h-[450px] animate-slide-up" style={{ animationDelay: "600ms" }}>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 gap-2 sm:gap-0">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-foreground">Sales Distribution</h3>
+            <h3 className="text-base sm:text-lg font-bold text-foreground">Sales Distribution</h3>
             <p className="text-xs text-muted-foreground mt-0.5">Sales breakdown by category</p>
           </div>
         </div>
-        <div className="text-sm font-semibold text-foreground bg-card/50 px-3 py-1.5 rounded-lg border border-border/50">
+        <div className="text-xs sm:text-sm font-semibold text-foreground bg-card/50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-border/50 whitespace-nowrap">
           Total: {formatCurrency(total)}
         </div>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Donut Chart */}
-        <div className="h-[320px] relative flex items-center justify-center" ref={chartRef}>
+        <div className="h-[250px] sm:h-[300px] lg:h-[320px] relative flex items-center justify-center bg-transparent" ref={chartRef}>
           {plotlyData ? (
-            <div className="w-full h-full">
+            <div className="w-full h-full bg-transparent">
               <Plot
                 data={plotlyData.data}
                 layout={plotlyData.layout}
                 config={plotlyData.config}
-                style={{ width: '100%', height: '100%' }}
+                style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }}
                 useResizeHandler={true}
                 onInitialized={(figure, graphDiv) => {
                   // Add text shadow to pie chart text for better visibility
+                  // Also ensure Plotly background is transparent
                   if (graphDiv) {
+                    const currentIsMobile = window.innerWidth < 640;
                     const pieTextElements = graphDiv.querySelectorAll('.pie text');
                     pieTextElements.forEach((textEl) => {
                       textEl.style.textShadow = '2px 2px 4px rgba(0, 0, 0, 0.9), -2px -2px 4px rgba(0, 0, 0, 0.9), 2px -2px 4px rgba(0, 0, 0, 0.9), -2px 2px 4px rgba(0, 0, 0, 0.9)';
                       textEl.style.fontWeight = 'bold';
-                      textEl.style.fontSize = '13px';
+                      textEl.style.fontSize = currentIsMobile ? '11px' : '13px';
                     });
+                    // Ensure Plotly container background is transparent
+                    const plotlyContainer = graphDiv.querySelector('.js-plotly-plot');
+                    if (plotlyContainer) {
+                      plotlyContainer.style.backgroundColor = 'transparent';
+                    }
+                    // Ensure plot background is transparent
+                    const plotDiv = graphDiv.querySelector('.plotly');
+                    if (plotDiv) {
+                      plotDiv.style.backgroundColor = 'transparent';
+                    }
                   }
                 }}
                 onUpdate={(figure, graphDiv) => {
                   // Reapply text shadow on updates
+                  // Also ensure Plotly background is transparent
                   if (graphDiv) {
+                    const currentIsMobile = window.innerWidth < 640;
                     const pieTextElements = graphDiv.querySelectorAll('.pie text');
                     pieTextElements.forEach((textEl) => {
                       textEl.style.textShadow = '2px 2px 4px rgba(0, 0, 0, 0.9), -2px -2px 4px rgba(0, 0, 0, 0.9), 2px -2px 4px rgba(0, 0, 0, 0.9), -2px 2px 4px rgba(0, 0, 0, 0.9)';
                       textEl.style.fontWeight = 'bold';
-                      textEl.style.fontSize = '13px';
+                      textEl.style.fontSize = currentIsMobile ? '11px' : '13px';
                     });
+                    // Ensure Plotly container background is transparent
+                    const plotlyContainer = graphDiv.querySelector('.js-plotly-plot');
+                    if (plotlyContainer) {
+                      plotlyContainer.style.backgroundColor = 'transparent';
+                    }
+                    // Ensure plot background is transparent
+                    const plotDiv = graphDiv.querySelector('.plotly');
+                    if (plotDiv) {
+                      plotDiv.style.backgroundColor = 'transparent';
+                    }
                   }
                 }}
               />
@@ -363,37 +404,37 @@ export const SalesDistributionChart = ({ siteId, month, months, year, years }) =
         </div>
 
         {/* Legend Table */}
-        <div className="overflow-y-auto max-h-[320px]">
-          <table className="w-full text-sm">
-            <thead className="sticky top-0 bg-card z-10">
+        <div className="overflow-y-auto h-[250px] sm:h-[300px] lg:h-[320px] bg-transparent rounded-lg">
+          <table className="w-full text-xs sm:text-sm bg-transparent">
+            <thead className="sticky top-0 bg-card z-10 border-b border-border">
               <tr className="border-b border-border">
-                <th className="text-left py-3 px-4 font-semibold text-foreground">Category</th>
-                <th className="text-right py-3 px-4 font-semibold text-foreground">Sales</th>
+                <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-semibold text-foreground">Category</th>
+                <th className="text-right py-2 sm:py-3 px-2 sm:px-4 font-semibold text-foreground">Sales</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="bg-transparent">
               {chartData.map((item, index) => (
                 <tr
                   key={index}
-                  className="border-b border-border/60 hover:bg-muted/40 transition-colors"
+                  className="border-b border-border/60 hover:bg-muted/40 transition-colors bg-transparent"
                 >
-                  <td className="py-3 px-4">
+                  <td className="py-2 sm:py-3 px-2 sm:px-4">
                     <div className="flex items-center gap-2">
                       <div
-                        className="w-3 h-3 rounded-sm"
+                        className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-sm flex-shrink-0"
                         style={{ backgroundColor: item.color }}
                       />
-                      <span className="text-foreground font-medium">{item.name}</span>
+                      <span className="text-foreground font-medium truncate">{item.name}</span>
                     </div>
                   </td>
-                  <td className="py-3 px-4 text-right text-foreground font-medium">
+                  <td className="py-2 sm:py-3 px-2 sm:px-4 text-right text-foreground font-medium whitespace-nowrap">
                     {formatCurrency(item.value)}
                   </td>
                 </tr>
               ))}
               <tr className="border-t-2 border-border font-semibold bg-muted/20">
-                <td className="py-3 px-4 text-foreground">Total</td>
-                <td className="py-3 px-4 text-right text-foreground">
+                <td className="py-2 sm:py-3 px-2 sm:px-4 text-foreground">Total</td>
+                <td className="py-2 sm:py-3 px-2 sm:px-4 text-right text-foreground">
                   {formatCurrency(total)}
                 </td>
               </tr>

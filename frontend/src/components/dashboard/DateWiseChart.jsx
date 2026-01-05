@@ -111,9 +111,9 @@ export const DateWiseChart = ({ selectedMonths = [], siteId, years = [] }) => {
   const shouldShowMonthFilter = selectedMonths.length > 1 || selectedMonths.length === 0;
   
   return (
-    <div className="chart-card h-[380px] animate-slide-up" style={{ animationDelay: "450ms" }}>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-foreground">Date-Wise Data (Line chart)</h3>
+    <div className="chart-card h-[320px] sm:h-[360px] lg:h-[380px] animate-slide-up" style={{ animationDelay: "450ms" }}>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 gap-2 sm:gap-0">
+        <h3 className="text-base sm:text-lg font-semibold text-foreground">Date-Wise Data (Line chart)</h3>
         {shouldShowMonthFilter && (
           <Select 
             value={currentMonthFilter ? currentMonthFilter.toString() : defaultMonthValue.toString()} 
@@ -123,7 +123,7 @@ export const DateWiseChart = ({ selectedMonths = [], siteId, years = [] }) => {
               console.log('📅 [DateWiseChart] Month filter changed to:', newMonth);
             }}
           >
-            <SelectTrigger className="w-40 bg-background border-border">
+            <SelectTrigger className="w-full sm:w-40 bg-background border-border h-9 sm:h-10 text-sm">
               <SelectValue placeholder="Select Month" />
             </SelectTrigger>
             <SelectContent>
@@ -151,56 +151,70 @@ export const DateWiseChart = ({ selectedMonths = [], siteId, years = [] }) => {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-[85%]">
-          <div className="text-muted-foreground">Loading date-wise data...</div>
+        <div className="flex items-center justify-center h-[calc(100%-80px)] sm:h-[85%]">
+          <div className="text-muted-foreground text-sm sm:text-base">Loading date-wise data...</div>
         </div>
       ) : !chartData || chartData.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-[85%]">
-          <div className="text-muted-foreground mb-2">No data available for the selected period.</div>
+        <div className="flex flex-col items-center justify-center h-[calc(100%-80px)] sm:h-[85%]">
+          <div className="text-muted-foreground mb-2 text-sm sm:text-base text-center px-2">No data available for the selected period.</div>
           {shouldShowMonthFilter && (
-            <div className="text-xs text-muted-foreground">Try selecting a different month from the dropdown above.</div>
+            <div className="text-xs text-muted-foreground text-center px-2">Try selecting a different month from the dropdown above.</div>
           )}
         </div>
       ) : (
-        <ResponsiveContainer width="100%" height="85%">
-          <AreaChart data={filteredData}>
-            <defs>
-              <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(var(--chart-blue))" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="hsl(var(--chart-blue))" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-            <XAxis 
-              dataKey="day" 
-              axisLine={false} 
-              tickLine={false}
-              tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
-            />
-            <YAxis 
-              axisLine={false} 
-              tickLine={false}
-              tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
-            />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "hsl(var(--card))",
-                border: "1px solid hsl(var(--border))",
-                borderRadius: "8px",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-              }}
-              formatter={(value) => [`£${value.toLocaleString()}`, "Sales"]}
-              labelFormatter={(label) => `Day ${label}`}
-            />
-            <Area 
-              type="monotone" 
-              dataKey="sales" 
-              stroke="hsl(var(--chart-blue))" 
-              strokeWidth={2}
-              fill="url(#salesGradient)" 
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+        <div className="h-[calc(100%-80px)] sm:h-[85%]">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={filteredData} margin={{ top: 5, right: 5, left: -10, bottom: 5 }}>
+              <defs>
+                <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="hsl(var(--chart-blue))" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="hsl(var(--chart-blue))" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+              <XAxis 
+                dataKey="day" 
+                axisLine={false} 
+                tickLine={false}
+                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+                className="sm:text-xs lg:text-sm"
+              />
+              <YAxis 
+                axisLine={false} 
+                tickLine={false}
+                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+                className="sm:text-xs lg:text-sm"
+                width={50}
+                tickFormatter={(value) => {
+                  if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+                  if (value >= 1000) return `${(value / 1000).toFixed(0)}k`;
+                  return value.toString();
+                }}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "hsl(var(--card))",
+                  border: "1px solid hsl(var(--border))",
+                  borderRadius: "8px",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                  fontSize: "12px",
+                  padding: "8px",
+                  maxWidth: "200px",
+                }}
+                formatter={(value) => [`£${value.toLocaleString()}`, "Sales"]}
+                labelFormatter={(label) => `Day ${label}`}
+                wrapperStyle={{ zIndex: 1000 }}
+              />
+              <Area 
+                type="monotone" 
+                dataKey="sales" 
+                stroke="hsl(var(--chart-blue))" 
+                strokeWidth={2}
+                fill="url(#salesGradient)" 
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
       )}
     </div>
   );

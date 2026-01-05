@@ -25,20 +25,10 @@ import { CardDetailModal, DetailItem } from "@/components/dashboard/CardDetailMo
 import { TopPerformingSitesTable } from "@/components/dashboard/TopPerformingSitesTable";
 import { MarketingInitiativesTable } from "@/components/dashboard/MarketingInitiativesTable";
 import { SalesDistributionChart } from "@/components/dashboard/SalesDistributionChart";
-import { SplineLoader } from "@/components/dashboard/SplineLoader";
 import { CityMap } from "@/components/dashboard/CityMap";
 import { dashboardAPI } from "@/services/api";
 
 const Index = () => {
-  // Check if this is the initial app load (first time in this session)
-  // Only show animation on initial load, not when navigating between pages
-  const isInitialLoad = !sessionStorage.getItem('appInitialized');
-  
-  // Loading state for Spline animation - only true on initial load
-  const [isLoading, setIsLoading] = useState(isInitialLoad);
-  const [dashboardVisible, setDashboardVisible] = useState(!isInitialLoad);
-  // Track if loading has already completed to prevent re-triggering
-  const loadingCompletedRef = useRef(!isInitialLoad);
 
   // Initialize sidebar state based on screen size
   const [sidebarOpen, setSidebarOpen] = useState(() => {
@@ -114,52 +104,6 @@ const Index = () => {
   }, []);
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
-
-  // Handle loading complete - fade in dashboard
-  // Use useCallback to prevent re-creation and re-triggering
-  const handleLoadingComplete = useCallback(() => {
-    // Only proceed if loading hasn't already completed
-    if (loadingCompletedRef.current) return;
-    
-    // Mark app as initialized in session storage
-    sessionStorage.setItem('appInitialized', 'true');
-    
-    // Ensure DOM is ready before showing dashboard
-    const showDashboard = () => {
-      // Use requestAnimationFrame for smooth transition
-      requestAnimationFrame(() => {
-        loadingCompletedRef.current = true;
-        setIsLoading(false);
-        // Smooth transition: wait for loader to fully fade out, then show dashboard
-        requestAnimationFrame(() => {
-          setTimeout(() => {
-            setDashboardVisible(true);
-          }, 300); // Small delay for smooth transition
-        });
-      });
-    };
-
-    // Wait for DOM and fonts to be ready
-    if (document.readyState === 'complete') {
-      if (document.fonts && document.fonts.ready) {
-        document.fonts.ready.then(() => {
-          showDashboard();
-        }).catch(() => {
-          setTimeout(showDashboard, 50);
-        });
-      } else {
-        setTimeout(showDashboard, 50);
-      }
-    } else if (document.readyState === 'interactive') {
-      window.addEventListener('load', () => {
-        setTimeout(showDashboard, 50);
-      }, { once: true });
-    } else {
-      document.addEventListener('DOMContentLoaded', () => {
-        setTimeout(showDashboard, 100);
-      }, { once: true });
-    }
-  }, []);
   
   const handleApplyFilters = useCallback((filters) => {
     // filters can be either { siteId, months, years } or { siteId, month, year } or just siteId (for backward compatibility)
@@ -366,25 +310,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background relative">
-      {/* Spline Loading Screen */}
-      {isLoading && (
-        <SplineLoader 
-          onLoadingComplete={handleLoadingComplete}
-          isLoading={isLoading}
-        />
-      )}
-
-      {/* Sidebar - Outside transition container to ensure fixed positioning */}
+      {/* Sidebar */}
       <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} />
 
-      {/* Main Dashboard - Animated Entry */}
-      <div
-        className={`transition-all duration-1200 ease-out ${
-          dashboardVisible
-            ? 'opacity-100 translate-y-0'
-            : 'opacity-0 translate-y-0 pointer-events-none'
-        }`}
-      >
+      {/* Main Dashboard */}
+      <div>
         <main 
           style={{ willChange: 'margin-left' }}
           className={`transition-[margin-left] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-0'} ml-0`}
@@ -395,10 +325,10 @@ const Index = () => {
           totalSales={totalSalesAllSites}
         />
         
-        <div className="p-4 lg:p-6">
+        <div className="p-3 sm:p-4 lg:p-6">
           {/* Page Title */}
-          <div className="mb-4 lg:mb-6">
-            <h1 className="text-xl lg:text-2xl font-bold text-foreground">Business Performance Dashboard</h1>
+          <div className="mb-3 sm:mb-4 lg:mb-6">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">Fuel Dashboard Report</h1>
           </div>
 
           {/* Filter Section */}
@@ -413,7 +343,7 @@ const Index = () => {
           {!filtersApplied && (
             <InitialLandingState 
               onApplyFilters={handleApplyFilters}
-              dashboardVisible={dashboardVisible}
+              dashboardVisible={true}
             />
           )}
 
@@ -425,13 +355,13 @@ const Index = () => {
 
           {/* Primary Metrics Grid - Row 1 */}
           {loadingMetrics ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5 mb-4 lg:mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 mb-3 sm:mb-4 lg:mb-6">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="chart-card animate-pulse h-32" />
+                <div key={i} className="chart-card animate-pulse h-28 sm:h-32" />
               ))}
             </div>
           ) : metrics ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5 mb-4 lg:mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 mb-3 sm:mb-4 lg:mb-6">
               <MetricCard
                 title="Total Fuel Volume"
                 value={formatVolume(metrics.totalFuelVolume)}
@@ -484,7 +414,7 @@ const Index = () => {
 
           {/* Secondary Metrics Grid - Row 2 */}
           {metrics ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5 mb-4 lg:mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 mb-3 sm:mb-4 lg:mb-6">
               <MetricCard
                 title="Actual PPL"
                 value={formatCurrency(metrics.actualPPL)}
@@ -534,7 +464,7 @@ const Index = () => {
 
           {/* Status Cards Row */}
           {statusData ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 lg:gap-5 mb-4 lg:mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 lg:gap-5 mb-3 sm:mb-4 lg:mb-6">
               <StatusCard 
                 title="Bank Closing Balance" 
                 value={formatCurrency(statusData.bankClosingBalance)} 
@@ -568,7 +498,7 @@ const Index = () => {
           <QuickInsights />
 
           {/* Charts Row 1 */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 mb-4 lg:mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 mb-3 sm:mb-4 lg:mb-6">
             <div className="lg:col-span-2">
               <MonthlyPerformanceChart 
                 siteId={selectedSite} 
@@ -588,7 +518,7 @@ const Index = () => {
           </div>
 
           {/* Charts Row 2 */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mb-4 lg:mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6 mb-3 sm:mb-4 lg:mb-6">
             <BunkeredSalesChart 
               siteId={selectedSite} 
               month={selectedMonth}
@@ -613,7 +543,7 @@ const Index = () => {
           />
 
           {/* Tables Row */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mb-4 lg:mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6 mb-3 sm:mb-4 lg:mb-6">
             <TopPerformingSitesTable 
               siteId={selectedSite} 
               month={selectedMonth}

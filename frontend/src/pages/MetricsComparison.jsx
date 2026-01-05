@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { Header } from "@/components/dashboard/Header";
-import { SplineLoader } from "@/components/dashboard/SplineLoader";
 import { SiteCard } from "@/components/dashboard/SiteCard";
 import { sitesAPI, dashboardAPI } from "@/services/api";
 import { BarChart3, Filter, Table as TableIcon, PieChart } from "lucide-react";
@@ -21,12 +20,6 @@ import {
 import Plot from "react-plotly.js";
 
 const MetricsComparison = () => {
-  // Check if this is the initial app load
-  const isInitialLoad = !sessionStorage.getItem('appInitialized');
-  
-  const [isLoading, setIsLoading] = useState(isInitialLoad);
-  const [dashboardVisible, setDashboardVisible] = useState(!isInitialLoad);
-  const loadingCompletedRef = { current: !isInitialLoad };
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     if (typeof window !== 'undefined') {
       return window.innerWidth >= 1024;
@@ -172,45 +165,6 @@ const MetricsComparison = () => {
   }, []);
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
-
-  // Handle loading complete
-  useEffect(() => {
-    if (loadingCompletedRef.current) return;
-    
-    sessionStorage.setItem('appInitialized', 'true');
-    
-    const showDashboard = () => {
-      requestAnimationFrame(() => {
-        loadingCompletedRef.current = true;
-        setIsLoading(false);
-        requestAnimationFrame(() => {
-          setTimeout(() => {
-            setDashboardVisible(true);
-          }, 300);
-        });
-      });
-    };
-
-    if (document.readyState === 'complete') {
-      if (document.fonts && document.fonts.ready) {
-        document.fonts.ready.then(() => {
-          showDashboard();
-        }).catch(() => {
-          setTimeout(showDashboard, 50);
-        });
-      } else {
-        setTimeout(showDashboard, 50);
-      }
-    } else if (document.readyState === 'interactive') {
-      window.addEventListener('load', () => {
-        setTimeout(showDashboard, 50);
-      }, { once: true });
-    } else {
-      document.addEventListener('DOMContentLoaded', () => {
-        setTimeout(showDashboard, 100);
-      }, { once: true });
-    }
-  }, []);
 
   // Fetch total sales across all sites (all months, all years)
   useEffect(() => {
@@ -861,25 +815,11 @@ const MetricsComparison = () => {
 
   return (
     <div className="min-h-screen bg-background relative">
-      {/* Spline Loading Screen */}
-      {isLoading && (
-        <SplineLoader 
-          onLoadingComplete={() => setIsLoading(false)}
-          isLoading={isLoading}
-        />
-      )}
-
       {/* Sidebar */}
       <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} />
 
       {/* Main Content */}
-      <div
-        className={`transition-all duration-1200 ease-out ${
-          dashboardVisible
-            ? 'opacity-100 translate-y-0'
-            : 'opacity-0 translate-y-0 pointer-events-none'
-        }`}
-      >
+      <div>
         <main 
           style={{ willChange: 'margin-left' }}
           className={`transition-[margin-left] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-0'} ml-0`}

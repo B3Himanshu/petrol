@@ -70,13 +70,13 @@ export const Sidebar = ({ isOpen, onToggle }) => {
       >
         {/* Logo and Hamburger Button - Fixed at top */}
         <div className="flex-shrink-0 p-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-sidebar-accent rounded-xl flex items-center justify-center">
-              <Fuel className="w-6 h-6 text-sidebar-bg" />
-            </div>
-            <span className="text-xl font-bold text-sidebar-foreground">
-              Fuely
-            </span>
+          <div className="flex items-center">
+            {/* Credentia Logo */}
+            <img
+              src="/logo_image.png"
+              alt="Credentia"
+              className="h-12 w-auto object-contain"
+            />
           </div>
           <button
             onClick={onToggle}

@@ -203,7 +203,7 @@ export const OverallSalesPieChart = ({ siteId, month, months, year, years }) => 
         textinfo: 'percent',
         textposition: 'inside',
         textfont: {
-          size: 13,
+          size: 11,
           color: '#ffffff',
           family: 'Arial, sans-serif',
         },
@@ -228,7 +228,7 @@ export const OverallSalesPieChart = ({ siteId, month, months, year, years }) => 
             yref: 'paper',
             showarrow: false,
             font: {
-              size: 13,
+              size: 11,
               color: 'hsl(var(--muted-foreground))',
               family: 'Arial, sans-serif',
             },
@@ -241,7 +241,7 @@ export const OverallSalesPieChart = ({ siteId, month, months, year, years }) => 
             yref: 'paper',
             showarrow: false,
             font: {
-              size: 24,
+              size: 18,
               color: 'hsl(var(--foreground))',
               family: 'Arial, sans-serif',
             },
@@ -251,19 +251,19 @@ export const OverallSalesPieChart = ({ siteId, month, months, year, years }) => 
         legend: {
           orientation: 'h',
           yanchor: 'bottom',
-          y: -0.15,
+          y: -0.2,
           xanchor: 'center',
           x: 0.5,
           font: {
             color: 'hsl(var(--foreground))',
-            size: 12,
+            size: 11,
             family: 'Arial, sans-serif',
           },
           itemclick: false,
           itemdoubleclick: false,
           traceorder: 'normal',
           itemsizing: 'constant',
-          itemwidth: 30,
+          itemwidth: 25,
           bgcolor: 'transparent',
           bordercolor: 'hsl(var(--border))',
           borderwidth: 0,
@@ -274,7 +274,7 @@ export const OverallSalesPieChart = ({ siteId, month, months, year, years }) => 
           color: 'hsl(var(--foreground))',
           family: 'Arial, sans-serif',
         },
-        margin: { l: 20, r: 20, t: 20, b: 80 },
+        margin: { l: 10, r: 10, t: 10, b: 60 },
         hoverlabel: {
           bgcolor: 'rgba(0, 0, 0, 0.85)',
           bordercolor: 'rgba(255, 255, 255, 0.3)',
@@ -299,9 +299,9 @@ export const OverallSalesPieChart = ({ siteId, month, months, year, years }) => 
   // Early returns after all hooks
   if (loading) {
     return (
-      <div className="chart-card h-[450px] animate-slide-up" style={{ animationDelay: "400ms" }}>
-        <div className="flex items-center justify-center h-full">
-          <div className="text-muted-foreground">Loading chart data...</div>
+      <div className="chart-card min-h-[400px] sm:min-h-[380px] lg:min-h-[450px] h-auto sm:h-[380px] lg:h-[450px] animate-slide-up" style={{ animationDelay: "400ms" }}>
+        <div className="flex items-center justify-center min-h-[300px] sm:h-full">
+          <div className="text-muted-foreground text-sm sm:text-base">Loading chart data...</div>
         </div>
       </div>
     );
@@ -309,53 +309,54 @@ export const OverallSalesPieChart = ({ siteId, month, months, year, years }) => 
 
   if (!chartData || chartData.length === 0) {
     return (
-      <div className="chart-card h-[450px] animate-slide-up" style={{ animationDelay: "400ms" }}>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-primary" />
+      <div className="chart-card min-h-[400px] sm:min-h-[380px] lg:min-h-[450px] h-auto sm:h-[380px] lg:h-[450px] animate-slide-up" style={{ animationDelay: "400ms" }}>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 gap-2 sm:gap-0">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-foreground">Overall Sales</h3>
+              <h3 className="text-base sm:text-lg font-bold text-foreground">Overall Sales</h3>
               <p className="text-xs text-muted-foreground mt-0.5">Sales distribution breakdown</p>
             </div>
           </div>
         </div>
-        <div className="flex items-center justify-center h-[320px]">
-          <div className="text-muted-foreground">No data available</div>
+        <div className="flex items-center justify-center min-h-[280px] sm:h-[280px] lg:h-[320px]">
+          <div className="text-muted-foreground text-sm sm:text-base">No data available</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="chart-card h-[450px] animate-slide-up" style={{ animationDelay: "400ms" }}>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-            <TrendingUp className="w-5 h-5 text-primary" />
+    <div className="chart-card min-h-[400px] sm:min-h-[380px] lg:min-h-[450px] h-auto sm:h-[380px] lg:h-[450px] animate-slide-up" style={{ animationDelay: "400ms" }}>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 gap-2 sm:gap-0">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-foreground">Overall Sales</h3>
+            <h3 className="text-base sm:text-lg font-bold text-foreground">Overall Sales</h3>
             <p className="text-xs text-muted-foreground mt-0.5">Sales distribution breakdown</p>
           </div>
         </div>
-        <div className="text-sm font-semibold text-foreground bg-card/50 px-3 py-1.5 rounded-lg border border-border/50">
+        <div className="text-xs sm:text-sm font-semibold text-foreground bg-card/50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-border/50 whitespace-nowrap">
           Total: {formatCurrency(total)}
         </div>
       </div>
       
-      <div className="h-[320px] relative flex items-center justify-center" ref={chartRef}>
+      <div className="h-[280px] sm:h-[280px] lg:h-[320px] relative flex items-center justify-center bg-transparent" ref={chartRef}>
         {plotlyData ? (
-          <div className="w-full h-full">
+          <div className="w-full h-full bg-transparent">
             <Plot
               data={plotlyData.data}
               layout={plotlyData.layout}
               config={plotlyData.config}
-              style={{ width: '100%', height: '100%' }}
+              style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }}
               useResizeHandler={true}
               onInitialized={(figure, graphDiv) => {
                 // Add text shadow to pie chart text for better visibility
+                // Also ensure Plotly background is transparent
                 if (graphDiv) {
                   const pieTextElements = graphDiv.querySelectorAll('.pie text');
                   pieTextElements.forEach((textEl) => {
@@ -363,10 +364,21 @@ export const OverallSalesPieChart = ({ siteId, month, months, year, years }) => 
                     textEl.style.fontWeight = 'bold';
                     textEl.style.fontSize = '13px';
                   });
+                  // Ensure Plotly container background is transparent
+                  const plotlyContainer = graphDiv.querySelector('.js-plotly-plot');
+                  if (plotlyContainer) {
+                    plotlyContainer.style.backgroundColor = 'transparent';
+                  }
+                  // Ensure plot background is transparent
+                  const plotDiv = graphDiv.querySelector('.plotly');
+                  if (plotDiv) {
+                    plotDiv.style.backgroundColor = 'transparent';
+                  }
                 }
               }}
               onUpdate={(figure, graphDiv) => {
                 // Reapply text shadow on updates
+                // Also ensure Plotly background is transparent
                 if (graphDiv) {
                   const pieTextElements = graphDiv.querySelectorAll('.pie text');
                   pieTextElements.forEach((textEl) => {
@@ -374,6 +386,16 @@ export const OverallSalesPieChart = ({ siteId, month, months, year, years }) => 
                     textEl.style.fontWeight = 'bold';
                     textEl.style.fontSize = '13px';
                   });
+                  // Ensure Plotly container background is transparent
+                  const plotlyContainer = graphDiv.querySelector('.js-plotly-plot');
+                  if (plotlyContainer) {
+                    plotlyContainer.style.backgroundColor = 'transparent';
+                  }
+                  // Ensure plot background is transparent
+                  const plotDiv = graphDiv.querySelector('.plotly');
+                  if (plotDiv) {
+                    plotDiv.style.backgroundColor = 'transparent';
+                  }
                 }
               }}
             />

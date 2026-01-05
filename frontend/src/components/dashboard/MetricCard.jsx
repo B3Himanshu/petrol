@@ -179,32 +179,32 @@ const MetricCardComponent = ({
     <div 
       ref={cardRef}
       className={cn(
-        "relative bg-card rounded-2xl p-5 border border-border shadow-sm hover:shadow-md transition-all duration-300 animate-slide-up overflow-hidden group",
+        "relative bg-card rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-5 border border-border shadow-sm hover:shadow-md transition-all duration-300 animate-slide-up overflow-hidden group",
         onClick && "cursor-pointer"
       )}
       style={{ animationDelay: `${delay}ms` }}
       onClick={onClick}
     >
       {/* Header with Icon and Title */}
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-3">
+      <div className="flex items-start justify-between mb-2 sm:mb-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <div className={cn(
-            "w-11 h-11 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110",
+            "w-8 h-8 sm:w-10 sm:h-10 lg:w-11 lg:h-11 rounded-lg sm:rounded-xl flex items-center justify-center transition-transform group-hover:scale-110",
             iconBgColors[iconBg]
           )}>
-            <Icon className="w-5 h-5" />
+            <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
           <div>
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{title}</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground font-medium uppercase tracking-wide leading-tight">{title}</p>
           </div>
         </div>
       </div>
 
       {/* Value */}
-      <div className="mb-3">
-        <h3 className="text-3xl font-bold text-foreground tracking-tight">{displayValue}</h3>
+      <div className="mb-2 sm:mb-3">
+        <h3 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight leading-tight">{displayValue}</h3>
         {subtitle && (
-          <p className="text-xs text-muted-foreground mt-1.5">{subtitle}</p>
+          <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 sm:mt-1.5">{subtitle}</p>
         )}
         {change && (
           <p className={cn(
@@ -222,7 +222,7 @@ const MetricCardComponent = ({
 
       {/* Enhanced Mini Charts */}
       {chartType !== "none" && chartData.length > 0 && (
-        <div className="h-20 mt-4 -mb-2 -mx-2">
+        <div className="h-16 sm:h-20 mt-3 sm:mt-4 -mb-2 -mx-1 sm:-mx-2">
           <ResponsiveContainer width="100%" height="100%">
             {chartType === "line" ? (
               <LineChart data={formattedChartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>

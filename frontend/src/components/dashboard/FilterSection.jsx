@@ -104,7 +104,7 @@ const MultiSelect = ({ options, selected, onChange, placeholder, label }) => {
           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[200px] p-0" align="start">
+      <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[200px] p-0" align="start">
         {/* Select All / Clear All button */}
         <div className="border-b p-2">
           <Button
@@ -233,27 +233,27 @@ const FilterSectionComponent = ({ onApplyFilters, selectedSite, onSiteChange, fi
     });
   }, [localSelectedSite, localSelectedMonths, localSelectedYears, onApplyFilters]);
   return (
-    <div className="chart-card mb-4 lg:mb-6 animate-slide-up">
-      <div className="flex items-center justify-between mb-3 lg:mb-4">
+    <div className="chart-card mb-3 sm:mb-4 lg:mb-6 animate-slide-up">
+      <div className="flex items-center justify-between mb-2 sm:mb-3 lg:mb-4">
         <div className="flex items-center gap-2">
           <Filter className="w-4 h-4 text-primary" />
-          <span className="text-sm lg:text-base font-semibold text-foreground">
+          <span className="text-sm sm:text-sm lg:text-base font-semibold text-foreground">
             Filters
           </span>
         </div>
-        <button className="text-xs lg:text-sm text-muted-foreground hover:text-foreground transition-colors">
+        <button className="text-xs sm:text-xs lg:text-sm text-muted-foreground hover:text-foreground transition-colors">
           Reset
         </button>
       </div>
 
-      <div className="flex flex-wrap items-end gap-3 lg:gap-4">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-3 lg:gap-4">
         {/* Site - First */}
-        <div className="flex-1 min-w-[120px] sm:min-w-[150px]">
-          <label className="text-xs font-medium text-primary mb-2 block">
+        <div className="flex-1 w-full sm:min-w-[140px] lg:min-w-[150px]">
+          <label className="text-xs font-medium text-primary mb-1.5 sm:mb-2 block">
             Site
           </label>
           <Select value={localSelectedSite} onValueChange={handleLocalSiteChange}>
-            <SelectTrigger className="bg-background border-border">
+            <SelectTrigger className="bg-background border-border h-9 sm:h-10">
               <SelectValue placeholder="Select site" />
             </SelectTrigger>
             <SelectContent>
@@ -272,8 +272,8 @@ const FilterSectionComponent = ({ onApplyFilters, selectedSite, onSiteChange, fi
         </div>
 
         {/* Year - Second */}
-        <div className="flex-1 min-w-[120px] sm:min-w-[150px]">
-          <label className="text-xs font-medium text-primary mb-2 block">
+        <div className="flex-1 w-full sm:min-w-[140px] lg:min-w-[150px]">
+          <label className="text-xs font-medium text-primary mb-1.5 sm:mb-2 block">
             Year
           </label>
           <MultiSelect
@@ -286,8 +286,8 @@ const FilterSectionComponent = ({ onApplyFilters, selectedSite, onSiteChange, fi
         </div>
 
         {/* Month - Third */}
-        <div className="flex-1 min-w-[120px] sm:min-w-[150px]">
-          <label className="text-xs font-medium text-primary mb-2 block">
+        <div className="flex-1 w-full sm:min-w-[140px] lg:min-w-[150px]">
+          <label className="text-xs font-medium text-primary mb-1.5 sm:mb-2 block">
             Month
           </label>
           <MultiSelect
@@ -301,7 +301,7 @@ const FilterSectionComponent = ({ onApplyFilters, selectedSite, onSiteChange, fi
 
         <Button 
           onClick={handleApplyFilters}
-          className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-4 lg:px-6 w-full sm:w-auto"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-4 lg:px-6 w-full sm:w-auto h-9 sm:h-10 mt-1 sm:mt-0"
         >
           Apply Filters
         </Button>
