@@ -76,6 +76,10 @@ const config = {
           orange: "hsl(var(--metric-orange))",
           purple: "hsl(var(--metric-purple))",
           pink: "hsl(var(--metric-pink))",
+          red: "hsl(var(--metric-red))",
+          cyan: "hsl(var(--metric-cyan))",
+          indigo: "hsl(var(--metric-indigo))",
+          teal: "hsl(var(--metric-teal))",
         },
       },
       borderRadius: {

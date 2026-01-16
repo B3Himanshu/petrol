@@ -306,6 +306,304 @@ export const dashboardAPI = {
     console.log('📊 [Frontend] getTotalSales response:', response);
     return response.data;
   },
+
+  /**
+   * Get petrol fuel volume for specific nominal codes filtered by date range
+   * @param {string} startDate - Start date in YYYY-MM-DD format
+   * @param {string} endDate - End date in YYYY-MM-DD format
+   */
+  getPetrolFuelVolume: async (startDate, endDate) => {
+    console.log('⛽ [Frontend] getPetrolFuelVolume called', { startDate, endDate });
+    
+    const params = new URLSearchParams({
+      startDate: startDate,
+      endDate: endDate
+    });
+    
+    const fullUrl = `/api/dashboard/petrol-data/fuel-volume?${params}`;
+    console.log('⛽ [Frontend] Full API URL:', fullUrl);
+    const response = await fetchAPI(fullUrl);
+    console.log('⛽ [Frontend] getPetrolFuelVolume response:', response);
+    return response.data;
+  },
+
+  /**
+   * Get fuel volume breakdown by nominal code for specific date range
+   * @param {string} startDate - Start date in YYYY-MM-DD format
+   * @param {string} endDate - End date in YYYY-MM-DD format
+   */
+  getPetrolFuelVolumeBreakdown: async (startDate, endDate) => {
+    console.log('⛽ [Frontend] getPetrolFuelVolumeBreakdown called', { startDate, endDate });
+    
+    const params = new URLSearchParams({
+      startDate: startDate,
+      endDate: endDate
+    });
+    
+    const fullUrl = `/api/dashboard/petrol-data/fuel-volume-breakdown?${params}`;
+    console.log('⛽ [Frontend] Full API URL:', fullUrl);
+    const response = await fetchAPI(fullUrl);
+    console.log('⛽ [Frontend] getPetrolFuelVolumeBreakdown response:', response);
+    return response.data;
+  },
+
+  /**
+   * Get net sales for specific nominal codes filtered by date range
+   * @param {string} startDate - Start date in YYYY-MM-DD format
+   * @param {string} endDate - End date in YYYY-MM-DD format
+   */
+  getPetrolNetSales: async (startDate, endDate) => {
+    console.log('💰 [Frontend] getPetrolNetSales called', { startDate, endDate });
+    
+    const params = new URLSearchParams({
+      startDate: startDate,
+      endDate: endDate
+    });
+    
+    const fullUrl = `/api/dashboard/petrol-data/net-sales?${params}`;
+    console.log('💰 [Frontend] Full API URL:', fullUrl);
+    const response = await fetchAPI(fullUrl);
+    console.log('💰 [Frontend] getPetrolNetSales response:', response);
+    return response.data;
+  },
+
+  /**
+   * Get net sales breakdown by nominal code for specific date range
+   * @param {string} startDate - Start date in YYYY-MM-DD format
+   * @param {string} endDate - End date in YYYY-MM-DD format
+   */
+  getPetrolNetSalesBreakdown: async (startDate, endDate) => {
+    console.log('💰 [Frontend] getPetrolNetSalesBreakdown called', { startDate, endDate });
+    
+    const params = new URLSearchParams({
+      startDate: startDate,
+      endDate: endDate
+    });
+    
+    const fullUrl = `/api/dashboard/petrol-data/net-sales-breakdown?${params}`;
+    console.log('💰 [Frontend] Full API URL:', fullUrl);
+    const response = await fetchAPI(fullUrl);
+    console.log('💰 [Frontend] getPetrolNetSalesBreakdown response:', response);
+    return response.data;
+  },
+
+  /**
+   * Get profit (Fuel Profit + Other Income) for specific date range
+   */
+  getPetrolProfit: async (startDate, endDate) => {
+    const params = new URLSearchParams({ startDate, endDate });
+    const response = await fetchAPI(`/api/dashboard/petrol-data/profit?${params}`);
+    return response.data;
+  },
+
+  /**
+   * Get profit breakdown for specific date range
+   */
+  getPetrolProfitBreakdown: async (startDate, endDate) => {
+    const params = new URLSearchParams({ startDate, endDate });
+    const response = await fetchAPI(`/api/dashboard/petrol-data/profit-breakdown?${params}`);
+    return response.data;
+  },
+
+  /**
+   * Get average profit per liter for specific date range
+   */
+  getPetrolAvgPPL: async (startDate, endDate) => {
+    const params = new URLSearchParams({ startDate, endDate });
+    const response = await fetchAPI(`/api/dashboard/petrol-data/avg-ppl?${params}`);
+    return response.data;
+  },
+
+  /**
+   * Get actual profit per liter (overheads per liter) for specific date range
+   */
+  getPetrolActualPPL: async (startDate, endDate) => {
+    const params = new URLSearchParams({ startDate, endDate });
+    const response = await fetchAPI(`/api/dashboard/petrol-data/actual-ppl?${params}`);
+    return response.data;
+  },
+
+  /**
+   * Get actual PPL breakdown (overhead categories) for specific date range
+   */
+  getPetrolActualPPLBreakdown: async (startDate, endDate) => {
+    const params = new URLSearchParams({ startDate, endDate });
+    const response = await fetchAPI(`/api/dashboard/petrol-data/actual-ppl-breakdown?${params}`);
+    return response.data;
+  },
+
+  /**
+   * Get labour cost for specific date range
+   */
+  getPetrolLabourCost: async (startDate, endDate) => {
+    const params = new URLSearchParams({ startDate, endDate });
+    const response = await fetchAPI(`/api/dashboard/petrol-data/labour-cost?${params}`);
+    return response.data;
+  },
+
+  /**
+   * Get labour cost breakdown for specific date range
+   */
+  getPetrolLabourCostBreakdown: async (startDate, endDate) => {
+    const params = new URLSearchParams({ startDate, endDate });
+    const response = await fetchAPI(`/api/dashboard/petrol-data/labour-cost-breakdown?${params}`);
+    return response.data;
+  },
+
+  /**
+   * Get active sites count for specific date range
+   */
+  getPetrolActiveSites: async (startDate, endDate) => {
+    const params = new URLSearchParams({ startDate, endDate });
+    const response = await fetchAPI(`/api/dashboard/petrol-data/active-sites?${params}`);
+    return response.data;
+  },
+
+  /**
+   * Get profit margin percentage for specific date range
+   */
+  getPetrolProfitMargin: async (startDate, endDate) => {
+    const params = new URLSearchParams({ startDate, endDate });
+    const response = await fetchAPI(`/api/dashboard/petrol-data/profit-margin?${params}`);
+    return response.data;
+  },
+
+  /**
+   * Get average sale per site for specific date range
+   */
+  getPetrolAvgSalePerSite: async (startDate, endDate) => {
+    const params = new URLSearchParams({ startDate, endDate });
+    const response = await fetchAPI(`/api/dashboard/petrol-data/avg-sale-per-site?${params}`);
+    return response.data;
+  },
+
+  /**
+   * Get total purchases for specific date range
+   */
+  getPetrolTotalPurchases: async (startDate, endDate) => {
+    const params = new URLSearchParams({ startDate, endDate });
+    const response = await fetchAPI(`/api/dashboard/petrol-data/total-purchases?${params}`);
+    return response.data;
+  },
+
+  /**
+   * Get total purchases breakdown for specific date range
+   */
+  getPetrolTotalPurchasesBreakdown: async (startDate, endDate) => {
+    const params = new URLSearchParams({ startDate, endDate });
+    const response = await fetchAPI(`/api/dashboard/petrol-data/total-purchases-breakdown?${params}`);
+    return response.data;
+  },
+
+  /**
+   * Get bank closing balance (only needs endDate)
+   */
+  getPetrolBankBalance: async (endDate) => {
+    const params = new URLSearchParams({ endDate });
+    const response = await fetchAPI(`/api/dashboard/petrol-data/bank-balance?${params}`);
+    return response.data;
+  },
+
+  /**
+   * Get bank balance breakdown (only needs endDate)
+   */
+  getPetrolBankBalanceBreakdown: async (endDate) => {
+    const params = new URLSearchParams({ endDate });
+    const response = await fetchAPI(`/api/dashboard/petrol-data/bank-balance-breakdown?${params}`);
+    return response.data;
+  },
+
+  /**
+   * Get bunkered breakdown (Volume, Sales, Profit)
+   */
+  getPetrolBunkeredBreakdown: async (startDate, endDate) => {
+    const params = new URLSearchParams({ startDate, endDate });
+    const response = await fetchAPI(`/api/dashboard/petrol-data/bunkered-breakdown?${params}`);
+    return response.data;
+  },
+
+  /**
+   * Get non-bunkered breakdown (Volume, Sales, Profit)
+   */
+  getPetrolNonBunkeredBreakdown: async (startDate, endDate) => {
+    const params = new URLSearchParams({ startDate, endDate });
+    const response = await fetchAPI(`/api/dashboard/petrol-data/non-bunkered-breakdown?${params}`);
+    return response.data;
+  },
+
+  /**
+   * Get other income summary (total only for card display)
+   */
+  getPetrolOtherIncomeSummary: async (startDate, endDate) => {
+    const params = new URLSearchParams({ startDate, endDate });
+    const response = await fetchAPI(`/api/dashboard/petrol-data/other-income-summary?${params}`);
+    return response.data;
+  },
+
+  /**
+   * Get monthly fuel performance trends across all sites
+   * @param {string} startDate - Start date in YYYY-MM-DD format
+   * @param {string} endDate - End date in YYYY-MM-DD format
+   */
+  getPetrolMonthlyTrends: async (startDate, endDate) => {
+    console.log('📊 [Frontend] getPetrolMonthlyTrends called', { startDate, endDate });
+    const params = new URLSearchParams({ startDate, endDate });
+    const response = await fetchAPI(`/api/dashboard/petrol-data/monthly-trends?${params}`);
+    console.log('📊 [Frontend] getPetrolMonthlyTrends response:', response);
+    return response.data;
+  },
+
+  /**
+   * Get daily/date-wise data across all sites
+   * @param {string} startDate - Start date in YYYY-MM-DD format
+   * @param {string} endDate - End date in YYYY-MM-DD format
+   */
+  getPetrolDailyData: async (startDate, endDate) => {
+    console.log('📅 [Frontend] getPetrolDailyData called', { startDate, endDate });
+    const params = new URLSearchParams({ startDate, endDate });
+    const response = await fetchAPI(`/api/dashboard/petrol-data/daily-data?${params}`);
+    console.log('📅 [Frontend] getPetrolDailyData response:', response);
+    return response.data;
+  },
+
+  /**
+   * Get PPL comparison (Avg PPL vs Actual PPL) across all sites
+   * @param {string} startDate - Start date in YYYY-MM-DD format
+   * @param {string} endDate - End date in YYYY-MM-DD format
+   */
+  getPetrolPPLComparison: async (startDate, endDate) => {
+    console.log('📊 [Frontend] getPetrolPPLComparison called', { startDate, endDate });
+    const params = new URLSearchParams({ startDate, endDate });
+    const response = await fetchAPI(`/api/dashboard/petrol-data/ppl-comparison?${params}`);
+    console.log('📊 [Frontend] getPetrolPPLComparison response:', response);
+    return response.data;
+  },
+
+  /**
+   * Get profit distribution by site (top 10) across all sites
+   * @param {string} startDate - Start date in YYYY-MM-DD format
+   * @param {string} endDate - End date in YYYY-MM-DD format
+   */
+  getPetrolProfitBySite: async (startDate, endDate) => {
+    console.log('💰 [Frontend] getPetrolProfitBySite called', { startDate, endDate });
+    const params = new URLSearchParams({ startDate, endDate });
+    const response = await fetchAPI(`/api/dashboard/petrol-data/profit-by-site?${params}`);
+    console.log('💰 [Frontend] getPetrolProfitBySite response:', response);
+    return response.data;
+  },
+
+  /**
+   * Get site rankings (top 5 and bottom 5) by net sales
+   * @param {string} startDate - Start date in YYYY-MM-DD format
+   * @param {string} endDate - End date in YYYY-MM-DD format
+   */
+  getPetrolSiteRankings: async (startDate, endDate) => {
+    console.log('📊 [Frontend] getPetrolSiteRankings called', { startDate, endDate });
+    const params = new URLSearchParams({ startDate, endDate });
+    const response = await fetchAPI(`/api/dashboard/petrol-data/site-rankings?${params}`);
+    console.log('📊 [Frontend] getPetrolSiteRankings response:', response);
+    return response.data;
+  },
 };
 
 /**

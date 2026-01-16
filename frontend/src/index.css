@@ -56,6 +56,10 @@
     --metric-orange: 25 95% 53%;
     --metric-purple: 262 83% 58%;
     --metric-pink: 330 81% 60%;
+    --metric-red: 0 84% 60%;
+    --metric-cyan: 188 78% 41%;
+    --metric-indigo: 239 84% 67%;
+    --metric-teal: 173 80% 40%;
 
     /* Shadows */
     --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.05);
@@ -113,6 +117,10 @@
     --metric-orange: 25 95% 58%;
     --metric-purple: 262 83% 63%;
     --metric-pink: 330 81% 65%;
+    --metric-red: 0 84% 65%;
+    --metric-cyan: 188 78% 50%;
+    --metric-indigo: 239 84% 72%;
+    --metric-teal: 173 80% 50%;
 
     /* Shadows - Enhanced for dark mode */
     --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.3);

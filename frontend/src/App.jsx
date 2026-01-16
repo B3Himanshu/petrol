@@ -7,6 +7,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Index from "./pages/Index";
 import Comparison from "./pages/Comparison";
 import MetricsComparison from "./pages/MetricsComparison";
+import PetrolData from "./pages/PetrolData";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/comparison" element={<Comparison />} />
             <Route path="/metrics-comparison" element={<MetricsComparison />} />
+            <Route path="/petrol-data" element={<PetrolData />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

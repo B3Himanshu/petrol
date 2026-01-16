@@ -6,6 +6,7 @@ import {
   Menu,
   X,
   Building2,
+  Database,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -117,6 +118,13 @@ export const Sidebar = ({ isOpen, onToggle }) => {
             label="Site Comparison"
             path="/comparison"
             active={currentPath === "/comparison"}
+          />
+
+          <NavItem
+            icon={<Database className="w-5 h-5" />}
+            label="Petrol Data"
+            path="/petrol-data"
+            active={currentPath === "/petrol-data"}
           />
         </nav>
       </aside>
