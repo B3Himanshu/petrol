@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import {
@@ -6,138 +6,174 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarDays } from "lucide-react";
-import { format, parseISO, isValid } from "date-fns";
-import { cn } from "@/lib/utils";
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
 
-/**
- * DateRangePicker Component
- * Allows users to select a date range for filtering data
- */
 export const DateRangePicker = ({ startDate, endDate, onDateChange }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [tempDate, setTempDate] = useState({
+    from: startDate ? new Date(startDate) : null,
+    to: endDate ? new Date(endDate) : null
+  });
 
-  // Convert string dates to Date objects for the calendar
-  // Use parseISO to avoid timezone issues
-  const startDateObj = useMemo(() => {
-    if (!startDate) return null;
-    try {
-      const date = parseISO(startDate);
-      return isValid(date) ? date : null;
-    } catch {
-      return null;
-    }
-  }, [startDate]);
+  const presets = [
+    { label: "Last month", getValue: () => {
+      const lastMonth = subMonths(new Date(), 1);
+      return { from: startOfMonth(lastMonth), to: endOfMonth(lastMonth) };
+    }},
+    { label: "This month", getValue: () => {
+      const now = new Date();
+      return { from: startOfMonth(now), to: now };
+    }},
+  ];
 
-  const endDateObj = useMemo(() => {
-    if (!endDate) return null;
-    try {
-      const date = parseISO(endDate);
-      return isValid(date) ? date : null;
-    } catch {
-      return null;
+  const handleConfirm = () => {
+    if (tempDate.from && tempDate.to) {
+      onDateChange(format(tempDate.from, 'yyyy-MM-dd'), format(tempDate.to, 'yyyy-MM-dd'));
     }
-  }, [endDate]);
-
-  // Handle date selection from calendar
-  const handleDateSelect = (range) => {
-    console.log('📅 [DateRangePicker] Date selection:', range);
-    
-    if (!range) {
-      // User cleared selection
-      return;
-    }
-
-    if (range.from) {
-      if (range.to) {
-        // Both dates selected - complete range
-        const fromDate = format(range.from, 'yyyy-MM-dd');
-        const toDate = format(range.to, 'yyyy-MM-dd');
-        console.log('📅 [DateRangePicker] Complete range selected:', { fromDate, toDate });
-        onDateChange(fromDate, toDate);
-        setIsOpen(false);
-      } else {
-        // Only start date selected - wait for end date
-        // Update start date immediately but keep calendar open
-        const fromDate = format(range.from, 'yyyy-MM-dd');
-        // Keep current endDate or use startDate as endDate if none exists
-        const currentEndDate = endDate || fromDate;
-        console.log('📅 [DateRangePicker] Start date selected:', { fromDate, currentEndDate });
-        onDateChange(fromDate, currentEndDate);
-      }
-    }
+    setIsOpen(false);
   };
 
-  // Format display text
-  const displayText = () => {
-    if (startDate && endDate) {
-      try {
-        const start = format(parseISO(startDate), 'MMM dd, yyyy');
-        const end = format(parseISO(endDate), 'MMM dd, yyyy');
-        return `${start} - ${end}`;
-      } catch (error) {
-        console.error('Error formatting dates:', error);
-        return `${startDate} - ${endDate}`;
-      }
-    }
-    return "Pick a date range";
-  };
-
-  // Create selected range object for calendar
-  const selectedRange = useMemo(() => {
-    if (startDateObj && endDateObj) {
-      return {
-        from: startDateObj,
-        to: endDateObj
-      };
-    }
-    if (startDateObj) {
-      return {
-        from: startDateObj,
-        to: undefined
-      };
-    }
-    return undefined;
-  }, [startDateObj, endDateObj]);
+  const displayText = tempDate.from && tempDate.to 
+    ? `${format(tempDate.from, 'MMM d')} - ${format(tempDate.to, 'MMM d')}`
+    : "Select date";
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          className={cn(
-            "w-full justify-start text-left font-normal h-9 sm:h-10",
-            "border-border bg-background hover:bg-accent hover:text-accent-foreground",
-            "transition-colors shadow-sm text-xs sm:text-sm",
-            !startDate && !endDate && "text-muted-foreground"
-          )}
-        >
-          <CalendarDays className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
-          <span className="font-medium truncate">{displayText()}</span>
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent 
-        className="w-auto p-0 border-border shadow-lg mx-2 sm:mx-0 max-w-[calc(100vw-1rem)] sm:max-w-none" 
-        align="start"
-        sideOffset={4}
-        side="bottom"
-        alignOffset={0}
-      >
-        <div className="bg-card rounded-lg border border-border overflow-hidden">
-          <Calendar
-            mode="range"
-            defaultMonth={startDateObj || endDateObj || new Date()}
-            selected={selectedRange}
-            onSelect={handleDateSelect}
-            numberOfMonths={1}
-            disabled={(date) => {
-              const today = new Date();
-              today.setHours(23, 59, 59, 999);
-              return date > today;
-            }}
-          />
-        </div>
-      </PopoverContent>
-    </Popover>
+    <div className="w-full">
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className="w-full justify-between bg-zinc-950 border-zinc-800 text-zinc-100 hover:bg-zinc-900 hover:border-zinc-700"
+            >
+              <div className="flex items-center gap-2">
+                <CalendarIcon className="h-4 w-4 text-zinc-400" />
+                <span className="text-sm font-medium">{displayText}</span>
+              </div>
+              <ChevronRight className="h-4 w-4 text-zinc-500" />
+            </Button>
+          </PopoverTrigger>
+          
+          <PopoverContent 
+            className="w-auto p-0 bg-zinc-950 border-zinc-800 shadow-2xl"
+            align="start"
+          >
+            <div className="bg-zinc-950">
+              {/* Header with presets */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
+                <span className="text-sm font-semibold text-zinc-100">
+                  {format(tempDate.from || new Date(), 'MMMM yyyy')}
+                </span>
+                <div className="flex gap-2">
+                  {presets.map((preset) => (
+                    <button
+                      key={preset.label}
+                      onClick={() => setTempDate(preset.getValue())}
+                      className="px-3 py-1 text-xs font-medium rounded-md bg-zinc-900 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100 transition-colors"
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Calendar */}
+              <div className="p-3">
+                <style>
+                  {`
+                    .rdp {
+                      --rdp-cell-size: 36px;
+                      --rdp-accent-color: #10b981;
+                      --rdp-background-color: rgba(16, 185, 129, 0.15);
+                      margin: 0;
+                    }
+                    .rdp-months {
+                      justify-content: center;
+                    }
+                    .rdp-month {
+                      width: 100%;
+                    }
+                    .rdp-caption {
+                      display: none;
+                    }
+                    .rdp-head_cell {
+                      color: #71717a;
+                      font-weight: 500;
+                      font-size: 11px;
+                      text-transform: uppercase;
+                      padding: 0;
+                      height: 28px;
+                    }
+                    .rdp-cell {
+                      padding: 2px;
+                    }
+                    .rdp-day {
+                      width: 36px;
+                      height: 36px;
+                      font-size: 13px;
+                      font-weight: 500;
+                      border-radius: 6px;
+                      color: #d4d4d8;
+                      transition: all 0.15s;
+                    }
+                    .rdp-day:hover:not(.rdp-day_selected):not(.rdp-day_disabled) {
+                      background-color: #27272a;
+                      color: #fafafa;
+                    }
+                    .rdp-day_selected {
+                      background-color: #10b981 !important;
+                      color: #000000 !important;
+                      font-weight: 600;
+                    }
+                    .rdp-day_range_start,
+                    .rdp-day_range_end {
+                      background-color: #10b981 !important;
+                      color: #000000 !important;
+                    }
+                    .rdp-day_range_middle {
+                      background-color: rgba(16, 185, 129, 0.15) !important;
+                      color: #10b981 !important;
+                    }
+                    .rdp-day_disabled {
+                      color: #3f3f46;
+                      opacity: 0.4;
+                    }
+                    .rdp-day_today:not(.rdp-day_selected) {
+                      font-weight: 600;
+                      color: #10b981;
+                    }
+                  `}
+                </style>
+                <Calendar
+                  mode="range"
+                  selected={tempDate}
+                  onSelect={setTempDate}
+                  numberOfMonths={1}
+                  disabled={(date) => date > new Date()}
+                  className="bg-zinc-950"
+                />
+              </div>
+
+              {/* Footer */}
+              <div className="px-4 py-3 border-t border-zinc-800 flex items-center justify-between">
+                <div className="text-xs text-zinc-400">
+                  {tempDate.from && tempDate.to && (
+                    <span>
+                      {format(tempDate.from, 'MMM d, yyyy')} - {format(tempDate.to, 'MMM d, yyyy')}
+                    </span>
+                  )}
+                </div>
+                <Button
+                  onClick={handleConfirm}
+                  disabled={!tempDate.from || !tempDate.to}
+                  className="h-8 px-4 bg-emerald-500 hover:bg-emerald-600 text-black font-semibold text-sm rounded-lg disabled:opacity-50 disabled:bg-zinc-800 disabled:text-zinc-500"
+                >
+                  Confirm
+                </Button>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+    </div>
   );
-};
+}
